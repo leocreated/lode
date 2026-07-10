@@ -233,7 +233,7 @@ function renderClaims() {
 function drawSpark(canvas, snaps) {
   const ctx = canvas.getContext('2d');
   const pts = snaps.map(s => s.views);
-  if (pts.length < 2) { ctx.fillStyle = '#a89a7e'; ctx.font = '11px IBM Plex Mono'; ctx.fillText('one survey so far', 6, 40); return; }
+  if (pts.length < 2) { ctx.fillStyle = '#a89a7e'; ctx.font = '11px Oskari G2'; ctx.fillText('one survey so far', 6, 40); return; }
   const min = Math.min(...pts), max = Math.max(...pts), span = Math.max(1, max - min);
   const W = canvas.width, H = canvas.height, pad = 8;
   ctx.strokeStyle = '#d9a441'; ctx.lineWidth = 2; ctx.beginPath();

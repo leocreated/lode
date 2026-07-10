@@ -21,8 +21,8 @@
   --trace: #b08d57;
   --barren: #6e6a60;
   --danger: #c25543;
-  --serif: 'Oskari G2', 'Fraunces', serif;
-  --mono: 'IBM Plex Mono', monospace;
+  --serif: 'Oskari G2', sans-serif;
+  --mono: 'Oskari G2', sans-serif; /* uniform type; weight + spacing do the differentiation */
 }
 
 * { box-sizing: border-box; margin: 0; }
@@ -32,10 +32,17 @@ body {
   background: radial-gradient(1200px 800px at 70% -10%, #2b2318 0%, var(--ink) 55%);
   color: var(--bone);
   font-family: var(--serif);
-  font-weight: 300;
+  font-weight: 400;
   min-height: 100vh;
   overflow-x: hidden;
+  font-variant-numeric: tabular-nums;
 }
+
+/* uniform typeface: weight carries the hierarchy */
+.panel-title, .tagline, .ledger, .census, .empty, .dig-meta, .luck-label,
+.hit .ch, .hit .stake, .claim-title small, .assay-date, .report-office { font-weight: 300; }
+.btn, .chip, .vein-grade b, .hit .nums, .claim-mo b, .assay-verdict, .stamp { font-weight: 600; }
+.ledger-row em { font-weight: 700; }
 
 #dust { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 .grain {
