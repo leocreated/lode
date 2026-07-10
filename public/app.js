@@ -3,6 +3,13 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
 const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : String(n);
+const ago = iso => {
+  const d = (Date.now() - Date.parse(iso)) / 86400000;
+  if (d < 1) return 'today';
+  if (d < 30) return Math.round(d) + 'd ago';
+  if (d < 365) return Math.round(d / 30) + ' mo ago';
+  return (d / 365).toFixed(1) + ' yr ago';
+};
 
 const FILTER_DEFAULTS = {
   minSubs: 0, maxSubs: 20000, minViews: 20000, minRatio: 5,
@@ -12,6 +19,7 @@ const FILTER_DEFAULTS = {
 let state = { digs: [], claims: [], assays: [] };
 let seeds = [];
 let currentDigIndex = 0;
+let nicheFilter = null;
 
 async function api(path, opts) {
   const res = await fetch(path, opts ? { headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined } : undefined);
@@ -190,62 +198,72 @@ function renderVeins() {
       (best ? ` · ${best.nicheName}` : d.mode === 'sweep' ? ' · sweep' : '') +
       ' · ' + new Date(d.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     const b = el('button', 'scan-tab' + (i === currentDigIndex ? ' active' : ''), label);
-    b.onclick = () => { currentDigIndex = i; renderVeins(); };
+    b.onclick = () => { currentDigIndex = i; nicheFilter = null; renderVeins(); };
     picker.appendChild(b);
   });
 
   const dig = state.digs[currentDigIndex];
   const wrap = $('#veins'); wrap.innerHTML = '';
+  const strip = $('#niche-strip'); strip.innerHTML = '';
   $('#veins-empty').style.display = dig ? 'none' : '';
   $('#dig-meta').textContent = dig
     ? `${dig.config ? summarizeFilters(dig.config) + ' · ' : ''}${dig.unitsSpent} quota units${dig.luckFilter ? ' · luck filter on' : ' · one-hit wonders shown'}`
     : '';
   if (!dig) return;
 
+  // niche strip: one pill per niche found, with grade + deep dive
+  const veinsWithHits = dig.veins.filter(v => v.hits?.length);
   dig.veins.forEach((vein, idx) => {
     const late = vein.census && vein.census.crowding > .4 && vein.census.newcomerMedianViewsPerVideo < 5000;
-    const card = el('div', 'vein accent-' + (idx % 2 ? 'violet' : 'teal') + (late ? ' late' : ''));
-    card.appendChild(el('div', 'vein-top', `
-      <div>
-        <div class="vein-name">${vein.nicheName || vein.query}</div>
-        ${vein.nicheDesc ? `<div class="vein-desc">${vein.nicheDesc}</div>` : ''}
-        <div class="vein-query">from search: ${vein.query}</div>
+    const has = vein.hits?.length;
+    const pill = el('div', 'niche-pill accent-' + (idx % 2 ? 'violet' : 'teal') + (has ? '' : ' dead') + (late ? ' late' : ''));
+    pill.innerHTML = `
+      <div class="np-main">
+        <span class="np-name">${vein.nicheName || vein.query}</span>
+        <span class="np-grade">${has ? fmt(vein.grade) + ' grade' : vein.error ? 'error' : '0 hits'}</span>
+        ${late ? '<span class="np-warn">crowded · late</span>' : ''}
       </div>
-      <div class="vein-grade"><b>${vein.error ? '—' : fmt(vein.grade)}</b><span>GRADE</span></div>`));
-
-    if (vein.error) {
-      card.appendChild(el('div', 'census warn', '⚠ ' + vein.error));
-    } else {
-      card.appendChild(el('div', 'census', `
-        ${vein.census.channelsSeen} channels surveyed · ${vein.census.newcomers90d} newcomers in 90d ·
-        newcomer median ${fmt(vein.census.newcomerMedianViewsPerVideo)} views/video
-        ${late ? '<span class="warn"> · CROWDED, LATE</span>' : ''}
-        ${vein.singleHitCount ? `<br>${vein.singleHitCount} one-hit wonder${vein.singleHitCount > 1 ? 's' : ''} hidden by luck filter` : ''}`));
-
-      for (const h of vein.hits.slice(0, 5)) {
-        const staked = state.claims.some(c => c.videoId === h.videoId);
-        const row = el('div', 'hit', `
-          <div><a href="https://youtube.com/watch?v=${h.videoId}" target="_blank">${h.title}</a>
-            <div class="ch">${h.channelTitle} · ${fmt(h.subs)} subs · ${h.channelAgeDays}d old · ${h.repeatOverperformers}× repeat</div></div>
-          <div class="nums">${fmt(h.views)}<small>${h.ratio}× subs</small></div>`);
-        const stake = el('button', 'stake' + (staked ? ' staked' : ''), staked ? '★ watching' : '☆ watch');
-        stake.onclick = async () => {
-          await api('/api/claim', { method: 'POST', body: { hit: h, query: vein.query } });
-          state = await api('/api/state'); renderAll();
-        };
-        row.appendChild(stake);
-        card.appendChild(row);
-      }
-      if (!vein.hits.length) card.appendChild(el('div', 'census', 'Nothing beat the filters here. Loosen them on the Scan page.'));
-
-      const actions = el('div', 'vein-actions');
-      const assayBtn = el('button', 'btn small gold', '🔎 Deep dive');
-      assayBtn.onclick = () => runAssayUI(vein, assayBtn);
-      actions.appendChild(assayBtn);
-      card.appendChild(actions);
+      ${vein.nicheDesc ? `<div class="np-desc">${vein.nicheDesc}</div>` : ''}`;
+    if (has) {
+      const row = el('div', 'np-actions');
+      const dd = el('button', 'btn tiny gold', '🔎 Deep dive');
+      dd.onclick = e => { e.stopPropagation(); runAssayUI(vein, dd); };
+      const flt = el('button', 'btn tiny', nicheFilter === vein.query ? 'show all' : 'only this');
+      flt.onclick = e => { e.stopPropagation(); nicheFilter = nicheFilter === vein.query ? null : vein.query; renderVeins(); };
+      row.appendChild(dd); row.appendChild(flt);
+      pill.appendChild(row);
     }
-    wrap.appendChild(card);
+    strip.appendChild(pill);
   });
+
+  // flat video grid: every hit is its own card, niche tagged on it
+  const cards = veinsWithHits
+    .flatMap((v, vi) => v.hits.map(h => ({ h, v, vi })))
+    .filter(x => !nicheFilter || x.v.query === nicheFilter)
+    .sort((a, b) => b.h.ratio * Math.log10(Math.max(10, b.h.views)) - a.h.ratio * Math.log10(Math.max(10, a.h.views)));
+
+  for (const { h, v, vi } of cards) {
+    const staked = state.claims.some(c => c.videoId === h.videoId);
+    const card = el('div', 'vcard');
+    card.innerHTML = `
+      <a class="thumb" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">
+        ${h.thumbnail ? `<img src="${h.thumbnail}" alt="" loading="lazy">` : '<div class="thumb-blank"></div>'}
+        <span class="ratio-badge">${h.ratio}×</span>
+      </a>
+      <a class="hit-title" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">${h.title}</a>
+      <div class="hit-meta"><b>${h.ratio}×</b> · ${fmt(h.views)} views · ${ago(h.publishedAt)}</div>
+      <div class="hit-meta dim">${h.channelTitle} · ${fmt(h.subs)} subs · channel ${h.channelAgeDays}d old · ${h.repeatOverperformers}× repeat</div>
+      <span class="niche-tag accent-${vi % 2 ? 'violet' : 'teal'}">${v.nicheName || v.query}</span>`;
+    const stake = el('button', 'stake' + (staked ? ' staked' : ''), staked ? '★ watching' : '☆ watch');
+    stake.onclick = async () => {
+      await api('/api/claim', { method: 'POST', body: { hit: h, query: v.query } });
+      state = await api('/api/state'); renderAll();
+    };
+    card.appendChild(stake);
+    wrap.appendChild(card);
+  }
+  if (!cards.length && veinsWithHits.length === 0)
+    wrap.appendChild(el('div', 'empty', 'Nothing beat the filters in this scan. Loosen them on the Scan page.'));
 }
 
 /* ---------- deep dive ---------- */
