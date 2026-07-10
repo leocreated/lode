@@ -26,7 +26,7 @@
       vec2 d = gl_PointCoord - 0.5;
       float r = length(d);
       float alpha = smoothstep(0.5, 0.05, r) * glow * 0.55;
-      vec3 gold = mix(vec3(0.55, 0.4, 0.13), vec3(1.0, 0.83, 0.42), glow);
+      vec3 gold = mix(vec3(0.05, 0.42, 0.37), vec3(0.44, 1.0, 0.92), glow);
       gl_FragColor = vec4(gold, alpha);
     }`;
 

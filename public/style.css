@@ -1,5 +1,5 @@
-/* LODE — prospector's field instrument.
-   Lamplight charcoal, real-metal gold, document stamps. */
+/* LODE — ink black, turquoise signal, racing-red warnings.
+   One typeface (Oskari G2), weight-driven hierarchy. */
 
 @font-face { font-family: 'Oskari G2'; src: url('fonts/OskariG2-Light.otf') format('opentype'); font-weight: 300; }
 @font-face { font-family: 'Oskari G2'; src: url('fonts/OskariG2-Book.otf') format('opentype'); font-weight: 400; }
@@ -8,19 +8,19 @@
 @font-face { font-family: 'Oskari G2'; src: url('fonts/OskariG2-Black.otf') format('opentype'); font-weight: 900; }
 
 :root {
-  --ink: #16120c;
-  --coal: #1e1811;
-  --coal-2: #262017;
-  --seam: #3a3226;
-  --bone: #e8ddc8;
-  --bone-dim: #a89a7e;
-  --gold: #d9a441;
-  --gold-hot: #f2c14e;
-  --gold-deep: #8f6a1e;
-  --paydirt: #e3b23c;
-  --trace: #b08d57;
-  --barren: #6e6a60;
-  --danger: #c25543;
+  --ink: #011627;
+  --coal: #04203a;
+  --coal-2: #062845;
+  --seam: #12395c;
+  --bone: #fdfffc;
+  --bone-dim: #7e97a8;
+  --gold: #41ead4;
+  --gold-hot: #8ffff0;
+  --gold-deep: #17967f;
+  --paydirt: #41ead4;
+  --trace: #b91372;
+  --barren: #5c6e7a;
+  --danger: #ff0022;
   --serif: 'Oskari G2', sans-serif;
   --mono: 'Oskari G2', sans-serif; /* uniform type; weight + spacing do the differentiation */
 }
@@ -29,7 +29,7 @@
 
 html { color-scheme: dark; }
 body {
-  background: radial-gradient(1200px 800px at 70% -10%, #2b2318 0%, var(--ink) 55%);
+  background: radial-gradient(1200px 800px at 70% -10%, #06304e 0%, var(--ink) 55%);
   color: var(--bone);
   font-family: var(--serif);
   font-weight: 400;
@@ -68,7 +68,7 @@ header, main { position: relative; z-index: 2; }
   font-weight: 900;
   letter-spacing: .04em;
   line-height: .9;
-  background: linear-gradient(105deg, var(--gold-deep) 0%, var(--gold-hot) 38%, #fff3d0 50%, var(--gold) 62%, var(--gold-deep) 100%);
+  background: linear-gradient(105deg, var(--gold-deep) 0%, var(--gold-hot) 38%, #eafffb 50%, var(--gold) 62%, var(--gold-deep) 100%);
   background-size: 200% 100%;
   -webkit-background-clip: text; background-clip: text; color: transparent;
   animation: glint 7s ease-in-out infinite;
@@ -145,9 +145,9 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
 .btn.gold {
   background: linear-gradient(180deg, var(--gold-hot), var(--gold) 60%, var(--gold-deep));
   color: var(--ink); font-weight: 600; border: none;
-  box-shadow: 0 4px 14px rgba(217,164,65,.25), inset 0 1px 0 rgba(255,255,255,.35);
+  box-shadow: 0 4px 14px rgba(65,234,212,.22), inset 0 1px 0 rgba(255,255,255,.35);
 }
-.btn.gold:hover { box-shadow: 0 6px 20px rgba(217,164,65,.4), inset 0 1px 0 rgba(255,255,255,.35); }
+.btn.gold:hover { box-shadow: 0 6px 20px rgba(65,234,212,.38), inset 0 1px 0 rgba(255,255,255,.35); }
 .btn.small { padding: 7px 14px; font-size: 11px; }
 .btn[disabled] { opacity: .45; pointer-events: none; }
 
@@ -156,7 +156,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
 .pan {
   width: 46px; height: 46px; border-radius: 50%;
   border: 2px solid var(--gold-deep);
-  background: radial-gradient(circle at 40% 35%, #3d3423, var(--ink));
+  background: radial-gradient(circle at 40% 35%, #0a3552, var(--ink));
   position: relative; overflow: hidden;
   animation: pan-rock 1.6s ease-in-out infinite;
 }
@@ -262,8 +262,8 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
   overflow-y: auto; padding: 5vh 20px;
 }
 .assay-report {
-  background: linear-gradient(180deg, #efe6d0, #e4d7ba);
-  color: #241d10;
+  background: linear-gradient(180deg, #fdfffc, #eef6f3);
+  color: #04203a;
   width: min(760px, 100%);
   border-radius: 3px;
   padding: 48px 56px 64px;
@@ -273,10 +273,10 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
 }
 .modal-close {
   position: absolute; top: 14px; right: 16px;
-  background: none; border: none; font-size: 18px; cursor: pointer; color: #6b5d3e;
+  background: none; border: none; font-size: 18px; cursor: pointer; color: #557084;
 }
-.report-head { border-bottom: 2px solid #241d10; padding-bottom: 14px; margin-bottom: 22px; }
-.report-office { font-family: var(--mono); font-size: 11px; letter-spacing: .34em; color: #6b5d3e; }
+.report-head { border-bottom: 2px solid #04203a; padding-bottom: 14px; margin-bottom: 22px; }
+.report-office { font-family: var(--mono); font-size: 11px; letter-spacing: .34em; color: #557084; }
 .report-query { font-size: 34px; font-weight: 900; text-transform: capitalize; margin-top: 6px; }
 .stamp {
   position: absolute; top: 44px; right: 48px;
@@ -285,9 +285,9 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
   transform: rotate(8deg); opacity: 0;
   mix-blend-mode: multiply;
 }
-.stamp.PAYDIRT { color: #9a6d0c; border-color: #9a6d0c; }
-.stamp.TRACE { color: #8a6d45; border-color: #8a6d45; }
-.stamp.BARREN { color: #57534a; border-color: #57534a; }
+.stamp.PAYDIRT { color: #0d9c86; border-color: #0d9c86; }
+.stamp.TRACE { color: #b91372; border-color: #b91372; }
+.stamp.BARREN { color: #5c6e7a; border-color: #5c6e7a; }
 .report-body { font-size: 15px; line-height: 1.65; }
 .report-body h1, .report-body h2, .report-body h3 { font-weight: 700; margin: 20px 0 8px; }
 .report-body p, .report-body ul { margin: 10px 0; }
