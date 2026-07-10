@@ -47,11 +47,31 @@ function initFilters() {
       const all = collectFilters();
       localStorage.setItem('lodeFilters', JSON.stringify(all));
       f.classList.toggle('touched', n !== FILTER_DEFAULTS[key]);
+      renderFilterSummary();
     };
     range.addEventListener('input', () => sync(range.value, true));
     num.addEventListener('input', () => sync(num.value, false));
     f.classList.toggle('touched', val !== FILTER_DEFAULTS[key]);
   }
+}
+function summarizeFilters(f) {
+  const parts = [
+    `subs ${fmt(f.minSubs)}–${fmt(f.maxSubs)}`,
+    `views ≥${fmt(f.minViews)}`,
+    `ratio ≥${f.minRatio}×`,
+    `channel ≤${f.maxChannelAgeDays}d`,
+    `last ${f.windowDays}d`,
+    `≥${Math.round(f.minDurationSec / 60)}min`,
+  ];
+  return parts.join(' · ');
+}
+function renderFilterSummary() {
+  const box = $('#filter-summary');
+  if (!box) return;
+  const f = collectFilters();
+  const custom = Object.keys(FILTER_DEFAULTS).some(k => f[k] !== FILTER_DEFAULTS[k]);
+  box.innerHTML = `<span class="fs-label">scanning with:</span> ${summarizeFilters(f)}` +
+    (custom ? ' <span class="fs-custom">· custom</span>' : '');
 }
 function collectFilters() {
   const out = {};
@@ -66,11 +86,13 @@ $('#btn-reset-filters').onclick = () => {
     f.querySelector('input[type=number]').value = v;
     f.classList.remove('touched');
   }
+  renderFilterSummary();
 };
 
 /* ---------- boot ---------- */
 async function boot() {
   initFilters();
+  renderFilterSummary();
   route();
   state = await api('/api/state');
   renderAll();
@@ -114,28 +136,39 @@ async function dig(mode) {
     return;
   }
   setDigging(true);
+  location.hash = '#niches'; // results land here; show it immediately with live progress
   try {
     const { jobId } = await api('/api/dig', { method: 'POST', body: { mode, seeds, luckFilter: $('#luck').checked, filters: collectFilters() } });
     const result = await poll(jobId, p => {
-      if (p.progress) $('#progress-text').textContent = `${p.progress.step} — ${p.progress.done}/${p.progress.total}`;
+      if (p.progress) {
+        $('#progress-text').textContent = `${p.progress.step} — ${p.progress.done}/${p.progress.total}`;
+        const pct = p.progress.total ? Math.max(6, Math.round(100 * p.progress.done / p.progress.total)) : 6;
+        $('#progress-fill').style.width = pct + '%';
+      }
     });
     state.digs.unshift(result);
     currentDigIndex = 0;
     renderAll();
-    location.hash = '#niches';
     gsap.from('.vein', { y: 24, opacity: 0, duration: .6, stagger: .07, ease: 'power3.out' });
   } catch (e) {
     $('#progress-text').textContent = '⚠ ' + e.message;
-    await new Promise(r => setTimeout(r, 3500));
+    await new Promise(r => setTimeout(r, 4500));
   }
   setDigging(false);
 }
 
 function setDigging(on) {
-  $('#dig-progress').hidden = !on;
+  $('#scan-live').hidden = !on;
+  $('#nav-dot').hidden = !on;
   $('#btn-seeded').disabled = on;
   $('#btn-sweep').disabled = on;
-  if (on) $('#progress-text').textContent = 'Scanning…';
+  if (on) {
+    $('#progress-text').textContent = 'Scanning…';
+    $('#progress-fill').style.width = '4%';
+    $('#veins').innerHTML = '';
+    $('#veins-empty').style.display = 'none';
+    $('#scan-picker').innerHTML = '';
+  }
 }
 
 async function poll(jobId, onTick) {
@@ -165,7 +198,7 @@ function renderVeins() {
   const wrap = $('#veins'); wrap.innerHTML = '';
   $('#veins-empty').style.display = dig ? 'none' : '';
   $('#dig-meta').textContent = dig
-    ? `${dig.unitsSpent} quota units${dig.luckFilter ? ' · luck filter on' : ' · one-hit wonders shown'}`
+    ? `${dig.config ? summarizeFilters(dig.config) + ' · ' : ''}${dig.unitsSpent} quota units${dig.luckFilter ? ' · luck filter on' : ' · one-hit wonders shown'}`
     : '';
   if (!dig) return;
 

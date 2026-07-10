@@ -19,7 +19,7 @@
     </div>
     <nav class="nav" id="nav">
       <a href="#scan" data-page="scan">Scan</a>
-      <a href="#niches" data-page="niches">Niches</a>
+      <a href="#niches" data-page="niches">Niches<span class="nav-dot" id="nav-dot" hidden></span></a>
       <a href="#watchlist" data-page="watchlist">Watchlist</a>
       <a href="#reports" data-page="reports">Reports</a>
     </nav>
@@ -34,59 +34,61 @@
 <main>
   <!-- ============ PAGE: SCAN ============ -->
   <section class="page" id="page-scan">
-    <div class="panel dig-panel">
-      <div class="panel-title"><span class="tick"></span>NEW SCAN</div>
-      <div class="dig-controls">
+    <div class="scan-layout">
+      <aside class="filter-rail">
+        <div class="panel">
+          <div class="panel-title"><span class="tick violet"></span>FILTERS <button class="btn tiny" id="btn-reset-filters">reset</button></div>
+          <div class="filters" id="filters">
+            <div class="filter" data-key="minSubs" data-min="0" data-max="100000" data-step="500">
+              <label>Min subscribers</label>
+              <div class="filter-row"><input type="range"><input type="number" min="0"></div>
+            </div>
+            <div class="filter" data-key="maxSubs" data-min="1000" data-max="500000" data-step="1000">
+              <label>Max subscribers</label>
+              <div class="filter-row"><input type="range"><input type="number" min="0"></div>
+            </div>
+            <div class="filter" data-key="minViews" data-min="1000" data-max="500000" data-step="1000">
+              <label>Min views on the video</label>
+              <div class="filter-row"><input type="range"><input type="number" min="0"></div>
+            </div>
+            <div class="filter" data-key="minRatio" data-min="1" data-max="50" data-step="1">
+              <label>Min views-to-subs ratio (×)</label>
+              <div class="filter-row"><input type="range"><input type="number" min="1"></div>
+            </div>
+            <div class="filter" data-key="maxChannelAgeDays" data-min="30" data-max="1500" data-step="10">
+              <label>Max channel age (days)</label>
+              <div class="filter-row"><input type="range"><input type="number" min="1"></div>
+            </div>
+            <div class="filter" data-key="windowDays" data-min="7" data-max="365" data-step="1">
+              <label>Video published within (days)</label>
+              <div class="filter-row"><input type="range"><input type="number" min="1"></div>
+            </div>
+            <div class="filter" data-key="minDurationSec" data-min="60" data-max="3600" data-step="30">
+              <label>Min video length (seconds)</label>
+              <div class="filter-row"><input type="range"><input type="number" min="0"></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="panel dig-panel">
+        <div class="panel-title"><span class="tick"></span>NEW SCAN</div>
+        <p class="scan-help">Type one or more topics (Enter after each), or hit Surprise sweep to patrol random territories. Results open on the <b>Niches</b> page automatically.</p>
         <div class="seed-box">
           <input id="seed-input" type="text" placeholder="type a topic + Enter — e.g. cold war spies" autocomplete="off">
           <div class="chips" id="chips"></div>
         </div>
-        <label class="luck-toggle" title="Require channels to overperform repeatedly. Off = show one-hit wonders too.">
-          <input type="checkbox" id="luck" checked>
-          <span class="luck-track"><span class="luck-thumb"></span></span>
-          <span class="luck-label">luck filter</span>
-        </label>
-        <div class="dig-buttons">
-          <button class="btn gold" id="btn-seeded">⛏ Scan topics</button>
-          <button class="btn" id="btn-sweep">Surprise sweep</button>
-        </div>
-      </div>
-      <div class="dig-progress" id="dig-progress" hidden>
-        <div class="pan"><div class="pan-swirl"></div></div>
-        <div class="progress-text" id="progress-text">Scanning…</div>
-      </div>
-    </div>
-
-    <div class="panel filter-panel">
-      <div class="panel-title"><span class="tick violet"></span>FILTERS <button class="btn tiny" id="btn-reset-filters">reset</button></div>
-      <div class="filters" id="filters">
-        <div class="filter" data-key="minSubs" data-min="0" data-max="100000" data-step="500">
-          <label>Min subscribers</label>
-          <input type="range"><input type="number" min="0">
-        </div>
-        <div class="filter" data-key="maxSubs" data-min="1000" data-max="500000" data-step="1000">
-          <label>Max subscribers</label>
-          <input type="range"><input type="number" min="0">
-        </div>
-        <div class="filter" data-key="minViews" data-min="1000" data-max="500000" data-step="1000">
-          <label>Min views on the video</label>
-          <input type="range"><input type="number" min="0">
-        </div>
-        <div class="filter" data-key="minRatio" data-min="1" data-max="50" data-step="1">
-          <label>Min views-to-subs ratio (×)</label>
-          <input type="range"><input type="number" min="1">
-        </div>
-        <div class="filter" data-key="maxChannelAgeDays" data-min="30" data-max="1500" data-step="10">
-          <label>Max channel age (days)</label>
-          <input type="range"><input type="number" min="1">
-        </div>
-        <div class="filter" data-key="windowDays" data-min="7" data-max="365" data-step="1">
-          <label>Video published within (days)</label>
-          <input type="range"><input type="number" min="1">
-        </div>
-        <div class="filter" data-key="minDurationSec" data-min="60" data-max="3600" data-step="30">
-          <label>Min video length (seconds)</label>
-          <input type="range"><input type="number" min="0">
+        <div class="filter-summary" id="filter-summary"></div>
+        <div class="dig-row">
+          <label class="luck-toggle" title="Require channels to overperform repeatedly. Off = show one-hit wonders too.">
+            <input type="checkbox" id="luck" checked>
+            <span class="luck-track"><span class="luck-thumb"></span></span>
+            <span class="luck-label">luck filter</span>
+          </label>
+          <div class="dig-buttons">
+            <button class="btn gold" id="btn-seeded">⛏ Scan topics</button>
+            <button class="btn" id="btn-sweep">Surprise sweep</button>
+          </div>
         </div>
       </div>
     </div>
@@ -98,6 +100,17 @@
       <h2>Niches</h2>
       <div class="dig-meta" id="dig-meta"></div>
     </div>
+
+    <!-- live scan progress hero -->
+    <div class="scan-live" id="scan-live" hidden>
+      <div class="pan"><div class="pan-swirl"></div></div>
+      <div>
+        <div class="scan-live-title" id="progress-text">Scanning…</div>
+        <div class="scan-live-bar"><div class="scan-live-fill" id="progress-fill"></div></div>
+        <div class="scan-live-sub">Results will appear right here. A scan takes about a minute; naming the niches adds a few more seconds.</div>
+      </div>
+    </div>
+
     <div class="scan-picker" id="scan-picker"></div>
     <div id="veins" class="veins"></div>
     <div id="veins-empty" class="empty">No scans yet. Start one on the Scan page.</div>
