@@ -27,7 +27,7 @@ function renderAll() {
 function renderLedger() {
   $('#stat-digs').textContent = state.digs.length;
   $('#stat-claims').textContent = state.claims.length;
-  $('#stat-paydirt').textContent = state.assays.filter(a => a.verdict === 'PAYDIRT').length;
+  $('#stat-paydirt').textContent = state.assays.filter(a => a.verdict === 'GO').length;
 }
 
 /* ---------- seeds ---------- */
@@ -78,7 +78,7 @@ function setDigging(on) {
   $('#dig-progress').hidden = !on;
   $('#btn-seeded').disabled = on;
   $('#btn-sweep').disabled = on;
-  if (on) $('#progress-text').textContent = 'Breaking ground…';
+  if (on) $('#progress-text').textContent = 'Scanning…';
 }
 
 async function poll(jobId, onTick) {
@@ -97,7 +97,7 @@ function renderVeins() {
   const wrap = $('#veins'); wrap.innerHTML = '';
   $('#veins-empty').style.display = dig ? 'none' : '';
   $('#dig-meta').textContent = dig
-    ? `${dig.mode} dig · ${new Date(dig.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} · ${dig.unitsSpent} quota units${dig.luckFilter ? ' · luck filter on' : ' · single-hit wonders shown'}`
+    ? `${dig.mode === 'seeded' ? 'topic scan' : 'surprise sweep'} · ${new Date(dig.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} · ${dig.unitsSpent} quota units${dig.luckFilter ? ' · luck filter on' : ' · one-hit wonders shown'}`
     : '';
   if (!dig) return;
 
@@ -123,7 +123,7 @@ function renderVeins() {
           <div><a href="https://youtube.com/watch?v=${h.videoId}" target="_blank">${h.title}</a>
             <div class="ch">${h.channelTitle} · ${fmt(h.subs)} subs · ${h.channelAgeDays}d old · ${h.repeatOverperformers}× repeat</div></div>
           <div class="nums">${fmt(h.views)}<small>${h.ratio}× subs</small></div>`);
-        const stake = el('button', 'stake' + (staked ? ' staked' : ''), staked ? '⚑ claimed' : '⚐ stake claim');
+        const stake = el('button', 'stake' + (staked ? ' staked' : ''), staked ? '★ watching' : '☆ watch');
         stake.onclick = async () => {
           await api('/api/claim', { method: 'POST', body: { hit: h, query: vein.query } });
           state = await api('/api/state'); renderAll();
@@ -131,10 +131,10 @@ function renderVeins() {
         row.appendChild(stake);
         card.appendChild(row);
       }
-      if (!vein.hits.length) card.appendChild(el('div', 'census', 'No outliers survived the filters here.'));
+      if (!vein.hits.length) card.appendChild(el('div', 'census', 'Nothing beat the filters here.'));
 
       const actions = el('div', 'vein-actions');
-      const assayBtn = el('button', 'btn small gold', '⚖ Run assay');
+      const assayBtn = el('button', 'btn small gold', '🔎 Deep dive');
       assayBtn.onclick = () => runAssayUI(vein, assayBtn);
       actions.appendChild(assayBtn);
       card.appendChild(actions);
@@ -147,9 +147,9 @@ function renderVeins() {
 async function runAssayUI(vein, btn) {
   btn.disabled = true;
   const original = btn.textContent;
-  btn.textContent = '⚖ assaying…';
+  btn.textContent = '🔎 analyzing…';
   const tick = setInterval(() => {
-    btn.textContent = btn.textContent.endsWith('……') ? '⚖ assaying…' : btn.textContent + '…';
+    btn.textContent = btn.textContent.endsWith('……') ? '🔎 analyzing…' : btn.textContent + '…';
   }, 1200);
   try {
     const { jobId } = await api('/api/assay', { method: 'POST', body: { vein } });
@@ -158,7 +158,7 @@ async function runAssayUI(vein, btn) {
     renderAssays(); renderLedger();
     openReport(assay);
   } catch (e) {
-    alert('Assay failed: ' + e.message);
+    alert('Deep dive failed: ' + e.message);
   }
   clearInterval(tick);
   btn.textContent = original;
@@ -195,13 +195,13 @@ $('#modal').addEventListener('click', e => { if (e.target === $('#modal')) $('#m
 
 /* ---------- claims ---------- */
 $('#btn-refresh').onclick = async e => {
-  e.target.disabled = true; e.target.textContent = 'Surveying…';
+  e.target.disabled = true; e.target.textContent = 'Refreshing…';
   try {
     const { claims } = await api('/api/claims/refresh', { method: 'POST', body: {} });
     state.claims = claims;
     renderClaims();
   } catch (err) { alert(err.message); }
-  e.target.disabled = false; e.target.textContent = 'Re-survey';
+  e.target.disabled = false; e.target.textContent = 'Refresh';
 };
 
 function renderClaims() {
@@ -214,13 +214,13 @@ function renderClaims() {
     const row = el('div', 'claim');
     row.appendChild(el('div', 'claim-title', `
       <a href="https://youtube.com/watch?v=${c.videoId}" target="_blank" style="color:inherit;text-decoration:none">${c.title}</a>
-      <small>${c.channelTitle} · staked ${new Date(c.claimedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} · ${c.query}</small>`));
+      <small>${c.channelTitle} · watching since ${new Date(c.claimedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} · ${c.query}</small>`));
     const spark = el('canvas', 'spark'); spark.width = 260; spark.height = 68;
     drawSpark(spark, c.snapshots);
     row.appendChild(spark);
     row.appendChild(el('div', 'claim-mo ' + (vpd === undefined ? '' : hot ? 'mo-hot' : 'mo-cold'),
-      vpd === undefined ? '<b>—</b>re-survey for momentum' : `<b>${vpd >= 0 ? '+' : ''}${fmt(vpd)}</b>views / day`));
-    const un = el('button', 'unstake', 'abandon');
+      vpd === undefined ? '<b>—</b>refresh for momentum' : `<b>${vpd >= 0 ? '+' : ''}${fmt(vpd)}</b>views / day`));
+    const un = el('button', 'unstake', 'remove');
     un.onclick = async () => {
       await api('/api/claim', { method: 'POST', body: { hit: c } });
       state = await api('/api/state'); renderAll();
@@ -233,10 +233,10 @@ function renderClaims() {
 function drawSpark(canvas, snaps) {
   const ctx = canvas.getContext('2d');
   const pts = snaps.map(s => s.views);
-  if (pts.length < 2) { ctx.fillStyle = '#a89a7e'; ctx.font = '11px Oskari G2'; ctx.fillText('one survey so far', 6, 40); return; }
+  if (pts.length < 2) { ctx.fillStyle = '#a89a7e'; ctx.font = '11px Oskari G2'; ctx.fillText('first check logged', 6, 40); return; }
   const min = Math.min(...pts), max = Math.max(...pts), span = Math.max(1, max - min);
   const W = canvas.width, H = canvas.height, pad = 8;
-  ctx.strokeStyle = '#d9a441'; ctx.lineWidth = 2; ctx.beginPath();
+  ctx.strokeStyle = '#b91372'; ctx.lineWidth = 2; ctx.beginPath();
   pts.forEach((v, i) => {
     const x = pad + (W - 2 * pad) * i / (pts.length - 1);
     const y = H - pad - (H - 2 * pad) * (v - min) / span;
@@ -244,7 +244,7 @@ function drawSpark(canvas, snaps) {
   });
   ctx.stroke();
   const lastX = W - pad, lastY = H - pad - (H - 2 * pad) * (pts.at(-1) - min) / span;
-  ctx.fillStyle = '#f2c14e'; ctx.beginPath(); ctx.arc(lastX, lastY, 3, 0, 7); ctx.fill();
+  ctx.fillStyle = '#41ead4'; ctx.beginPath(); ctx.arc(lastX, lastY, 3, 0, 7); ctx.fill();
 }
 
 /* ---------- tiny markdown ---------- */

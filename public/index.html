@@ -17,16 +17,16 @@
     <div class="tagline">field instrument № 001 · strike first</div>
   </div>
   <div class="ledger" id="ledger">
-    <span class="ledger-row"><em id="stat-digs">0</em> digs</span>
-    <span class="ledger-row"><em id="stat-claims">0</em> claims</span>
-    <span class="ledger-row"><em id="stat-paydirt">0</em> paydirt</span>
+    <span class="ledger-row"><em id="stat-digs">0</em> scans</span>
+    <span class="ledger-row"><em id="stat-claims">0</em> watching</span>
+    <span class="ledger-row"><em id="stat-paydirt">0</em> go calls</span>
   </div>
 </header>
 
 <main>
   <!-- DIG PANEL -->
   <section class="panel dig-panel" id="dig-panel">
-    <div class="panel-title"><span class="tick"></span>NEW DIG</div>
+    <div class="panel-title"><span class="tick"></span>NEW SCAN</div>
     <div class="dig-controls">
       <div class="seed-box">
         <input id="seed-input" type="text" placeholder="type a territory + Enter — e.g. cold war spies" autocomplete="off">
@@ -38,41 +38,41 @@
         <span class="luck-label">luck filter</span>
       </label>
       <div class="dig-buttons">
-        <button class="btn gold" id="btn-seeded">⛏ Dig seeds</button>
-        <button class="btn" id="btn-sweep">Open sweep</button>
+        <button class="btn gold" id="btn-seeded">⛏ Scan topics</button>
+        <button class="btn" id="btn-sweep">Surprise sweep</button>
       </div>
     </div>
     <div class="dig-progress" id="dig-progress" hidden>
       <div class="pan"><div class="pan-swirl"></div></div>
-      <div class="progress-text" id="progress-text">Breaking ground…</div>
+      <div class="progress-text" id="progress-text">Scanning…</div>
     </div>
   </section>
 
   <!-- VEINS -->
   <section class="veins-section">
     <div class="section-head">
-      <h2>Veins</h2>
+      <h2>Niches</h2>
       <div class="dig-meta" id="dig-meta"></div>
     </div>
     <div id="veins" class="veins"></div>
-    <div id="veins-empty" class="empty">No digs yet. Break ground above.</div>
+    <div id="veins-empty" class="empty">No scans yet. Start one above.</div>
   </section>
 
   <!-- CLAIMS -->
   <section class="claims-section">
     <div class="section-head">
-      <h2>Claims</h2>
-      <button class="btn small" id="btn-refresh">Re-survey</button>
+      <h2>Watchlist</h2>
+      <button class="btn small" id="btn-refresh">Refresh</button>
     </div>
     <div id="claims" class="claims"></div>
-    <div id="claims-empty" class="empty">Stake a claim from any vein to track its momentum.</div>
+    <div id="claims-empty" class="empty">Watch any video from a niche to track its momentum.</div>
   </section>
 
   <!-- ASSAY ARCHIVE -->
   <section class="assays-section">
-    <div class="section-head"><h2>Assay office</h2></div>
+    <div class="section-head"><h2>Reports</h2></div>
     <div id="assays" class="assays"></div>
-    <div id="assays-empty" class="empty">Run an assay on a vein and the report files here.</div>
+    <div id="assays-empty" class="empty">Deep dive a niche and the report lands here.</div>
   </section>
 </main>
 
@@ -81,7 +81,7 @@
   <div class="assay-report" id="assay-report">
     <button class="modal-close" id="modal-close">✕</button>
     <div class="report-head">
-      <div class="report-office">LODE ASSAY OFFICE</div>
+      <div class="report-office">LODE DEEP DIVE</div>
       <div class="report-query" id="report-query"></div>
     </div>
     <div class="stamp" id="stamp"></div>

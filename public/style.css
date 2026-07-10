@@ -74,7 +74,7 @@ header, main { position: relative; z-index: 2; }
   animation: glint 7s ease-in-out infinite;
 }
 @keyframes glint { 0%,100% { background-position: 0% 0 } 50% { background-position: 100% 0 } }
-.tagline {
+.tagline { color: var(--bone-dim);
   font-family: var(--mono); font-size: 11px; letter-spacing: .28em;
   text-transform: uppercase; color: var(--bone-dim); margin-top: 10px;
 }
@@ -110,8 +110,8 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
 .seed-box input:focus { border-color: var(--gold-deep); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; min-height: 8px; }
 .chip {
-  font-family: var(--mono); font-size: 12px; color: var(--ink);
-  background: linear-gradient(180deg, var(--gold-hot), var(--gold));
+  font-family: var(--mono); font-size: 12px; color: var(--bone);
+  background: linear-gradient(180deg, #d4358f, var(--trace));
   padding: 5px 10px; border-radius: 2px; cursor: pointer;
   box-shadow: 0 2px 6px rgba(0,0,0,.4);
 }
@@ -128,8 +128,8 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
   position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
   background: var(--bone-dim); transition: all .25s;
 }
-.luck-toggle input:checked + .luck-track { background: var(--gold-deep); }
-.luck-toggle input:checked + .luck-track .luck-thumb { left: 23px; background: var(--gold-hot); }
+.luck-toggle input:checked + .luck-track { background: var(--trace); }
+.luck-toggle input:checked + .luck-track .luck-thumb { left: 23px; background: #ff9ed4; }
 .luck-label { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--bone-dim); }
 
 .dig-buttons { display: flex; flex-direction: column; gap: 10px; }
@@ -177,6 +177,8 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
   color: var(--bone);
 }
 .section-head h2::after { content: '.'; color: var(--gold); }
+.claims-section h2::after { color: var(--trace) !important; }
+.assays-section h2::after { color: var(--danger) !important; }
 .dig-meta { font-family: var(--mono); font-size: 11px; color: var(--bone-dim); }
 .empty { font-family: var(--mono); font-size: 12px; color: var(--bone-dim); padding: 26px 4px; }
 
@@ -215,7 +217,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
 .hit .nums small { display: block; color: var(--bone-dim); }
 .hit .stake { grid-column: 2; font-size: 11px; background: none; border: none; color: var(--bone-dim); cursor: pointer; font-family: var(--mono); padding: 0; text-align: right; }
 .hit .stake:hover { color: var(--gold-hot); }
-.hit .stake.staked { color: var(--gold); }
+.hit .stake.staked { color: #e54ba0; }
 .vein-actions { margin-top: 14px; display: flex; gap: 10px; }
 
 /* ---------- claims ---------- */
@@ -231,7 +233,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
 .claim-mo { font-family: var(--mono); font-size: 12px; text-align: right; }
 .claim-mo b { display: block; font-size: 15px; font-weight: 600; }
 .mo-hot b { color: var(--gold-hot); }
-.mo-cold b { color: var(--barren); }
+.mo-cold b { color: var(--danger); }
 .claim .unstake { background: none; border: none; color: var(--bone-dim); font-family: var(--mono); font-size: 11px; cursor: pointer; }
 .claim .unstake:hover { color: var(--danger); }
 
@@ -247,9 +249,9 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
   font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .14em;
   padding: 4px 10px; border-radius: 2px; border: 1.5px solid;
 }
-.assay-verdict.PAYDIRT { color: var(--paydirt); border-color: var(--paydirt); }
-.assay-verdict.TRACE { color: var(--trace); border-color: var(--trace); }
-.assay-verdict.BARREN { color: var(--barren); border-color: var(--barren); }
+.assay-verdict.GO { color: var(--paydirt); border-color: var(--paydirt); }
+.assay-verdict.WATCH { color: var(--trace); border-color: var(--trace); }
+.assay-verdict.SKIP { color: var(--danger); border-color: var(--danger); }
 .assay-q { text-transform: capitalize; font-size: 15px; }
 .assay-date { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--bone-dim); }
 
@@ -285,9 +287,9 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
   transform: rotate(8deg); opacity: 0;
   mix-blend-mode: multiply;
 }
-.stamp.PAYDIRT { color: #0d9c86; border-color: #0d9c86; }
-.stamp.TRACE { color: #b91372; border-color: #b91372; }
-.stamp.BARREN { color: #5c6e7a; border-color: #5c6e7a; }
+.stamp.GO { color: #0d9c86; border-color: #0d9c86; }
+.stamp.WATCH { color: #b91372; border-color: #b91372; }
+.stamp.SKIP { color: #d40f2b; border-color: #d40f2b; }
 .report-body { font-size: 15px; line-height: 1.65; }
 .report-body h1, .report-body h2, .report-body h3 { font-weight: 700; margin: 20px 0 8px; }
 .report-body p, .report-body ul { margin: 10px 0; }
