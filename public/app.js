@@ -152,7 +152,9 @@ async function poll(jobId, onTick) {
 function renderVeins() {
   const picker = $('#scan-picker'); picker.innerHTML = '';
   state.digs.slice(0, 8).forEach((d, i) => {
-    const label = (d.mode === 'seeded' ? (d.seeds || []).slice(0, 2).join(', ') || 'topic scan' : 'sweep') +
+    const best = (d.veins || []).find(v => v.nicheName);
+    const label = `Scan ${state.digs.length - i}` +
+      (best ? ` · ${best.nicheName}` : d.mode === 'sweep' ? ' · sweep' : '') +
       ' · ' + new Date(d.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     const b = el('button', 'scan-tab' + (i === currentDigIndex ? ' active' : ''), label);
     b.onclick = () => { currentDigIndex = i; renderVeins(); };
@@ -171,7 +173,11 @@ function renderVeins() {
     const late = vein.census && vein.census.crowding > .4 && vein.census.newcomerMedianViewsPerVideo < 5000;
     const card = el('div', 'vein accent-' + (idx % 2 ? 'violet' : 'teal') + (late ? ' late' : ''));
     card.appendChild(el('div', 'vein-top', `
-      <div class="vein-name">${vein.query}</div>
+      <div>
+        <div class="vein-name">${vein.nicheName || vein.query}</div>
+        ${vein.nicheDesc ? `<div class="vein-desc">${vein.nicheDesc}</div>` : ''}
+        <div class="vein-query">from search: ${vein.query}</div>
+      </div>
       <div class="vein-grade"><b>${vein.error ? '—' : fmt(vein.grade)}</b><span>GRADE</span></div>`));
 
     if (vein.error) {

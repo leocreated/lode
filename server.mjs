@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { load, save, id } from './lib/store.mjs';
 import { runDig, SWEEP_TERRITORIES } from './lib/scan.mjs';
 import { buildAssayPrompt, runAssay } from './lib/assay.mjs';
+import { nameNiches } from './lib/name.mjs';
 import { YouTube } from './lib/youtube.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -40,7 +41,9 @@ app.post('/api/dig', (req, res) => {
   res.json({ jobId });
 
   runDig({ apiKey: API_KEY, mode, seeds, luckFilter, filters, onProgress: p => { job.progress = p; } })
-    .then(result => {
+    .then(async result => {
+      job.progress = { step: 'Naming the niches found', done: result.queries.length, total: result.queries.length };
+      await nameNiches(result.veins);
       const dig = { id: jobId, at: new Date().toISOString(), mode, seeds, ...result };
       const digs = load('digs', []);
       digs.unshift(dig);

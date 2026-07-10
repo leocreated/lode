@@ -377,3 +377,6 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
 .vein.accent-violet::before { background: linear-gradient(90deg, transparent, var(--trace), transparent); }
 .vein.accent-violet .vein-grade b { color: #ff9ed4; }
 .hit .nums small { color: #e54ba0; }
+
+.vein-desc { font-size: 13px; font-weight: 300; color: var(--bone-dim); margin-top: 6px; line-height: 1.5; }
+.vein-query { font-size: 10px; font-weight: 300; letter-spacing: .08em; text-transform: uppercase; color: #4a6478; margin-top: 6px; }
