@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { load, save, id } from './lib/store.mjs';
-import { runDig, SWEEP_TERRITORIES } from './lib/scan.mjs';
+import { runDig, gradeVein, SWEEP_TERRITORIES } from './lib/scan.mjs';
 import { buildAssayPrompt, runAssay } from './lib/assay.mjs';
 import { nameNiches } from './lib/name.mjs';
 import { YouTube } from './lib/youtube.mjs';
@@ -44,6 +44,8 @@ app.post('/api/dig', (req, res) => {
     .then(async result => {
       job.progress = { step: 'Naming the niches found', done: result.queries.length, total: result.queries.length };
       await nameNiches(result.veins);
+      for (const vein of result.veins) vein.grade = gradeVein(vein); // regrade after language drops
+      result.veins.sort((a, b) => b.grade - a.grade);
       const dig = { id: jobId, at: new Date().toISOString(), mode, seeds, ...result };
       const digs = load('digs', []);
       digs.unshift(dig);
