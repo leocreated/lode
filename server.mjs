@@ -18,7 +18,7 @@ const API_KEY = process.env.YOUTUBE_API_KEY;
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(ROOT, 'public')));
+app.use(express.static(path.join(ROOT, 'public'), { etag: false, lastModified: false, setHeaders: res => res.set('Cache-Control', 'no-store') }));
 
 // In-memory job progress; results persist to disk.
 const jobs = new Map();
@@ -33,13 +33,13 @@ app.get('/api/state', (req, res) => {
 });
 
 app.post('/api/dig', (req, res) => {
-  const { mode = 'sweep', seeds = [], luckFilter = true } = req.body || {};
+  const { mode = 'sweep', seeds = [], luckFilter = true, filters = {} } = req.body || {};
   const jobId = id('dig');
   const job = { id: jobId, status: 'running', progress: { step: 'Breaking ground', done: 0, total: 1 } };
   jobs.set(jobId, job);
   res.json({ jobId });
 
-  runDig({ apiKey: API_KEY, mode, seeds, luckFilter, onProgress: p => { job.progress = p; } })
+  runDig({ apiKey: API_KEY, mode, seeds, luckFilter, filters, onProgress: p => { job.progress = p; } })
     .then(result => {
       const dig = { id: jobId, at: new Date().toISOString(), mode, seeds, ...result };
       const digs = load('digs', []);

@@ -63,8 +63,9 @@ header, main { position: relative; z-index: 2; }
   padding: 42px 48px 26px;
   border-bottom: 1px solid var(--seam);
 }
+.mast-left { display: flex; align-items: flex-end; gap: 48px; }
 .wordmark h1 {
-  font-size: clamp(56px, 8vw, 96px);
+  font-size: clamp(44px, 6vw, 72px);
   font-weight: 900;
   letter-spacing: .04em;
   line-height: .9;
@@ -80,6 +81,8 @@ header, main { position: relative; z-index: 2; }
 }
 .ledger { display: flex; gap: 28px; font-family: var(--mono); font-size: 12px; color: var(--bone-dim); }
 .ledger-row em { font-style: normal; color: var(--gold); font-size: 22px; display: block; text-align: right; }
+.ledger-row:nth-child(2) em { color: #e54ba0; }
+.ledger-row:nth-child(3) em { color: var(--danger); }
 
 main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: grid; gap: 52px; }
 
@@ -306,3 +309,71 @@ main { max-width: 1180px; margin: 0 auto; padding: 36px 48px 120px; display: gri
   .assay-report { padding: 34px 26px 48px; }
   .stamp { position: static; display: inline-block; margin-bottom: 10px; }
 }
+
+
+/* ---------- nav (race stripe = racing red) ---------- */
+.nav { display: flex; gap: 6px; padding-bottom: 6px; }
+.nav a {
+  font-weight: 600; font-size: 14px; letter-spacing: .04em;
+  color: var(--bone-dim); text-decoration: none;
+  padding: 8px 16px; border-radius: 3px; position: relative;
+  transition: color .2s;
+}
+.nav a:hover { color: var(--bone); }
+.nav a.active { color: var(--bone); }
+.nav a.active::after {
+  content: ''; position: absolute; left: 14px; right: 14px; bottom: 0; height: 3px;
+  background: var(--danger); border-radius: 2px;
+  box-shadow: 0 0 12px rgba(255,0,34,.6);
+}
+
+/* ---------- pages ---------- */
+.page { display: grid; gap: 40px; }
+
+/* ---------- filter deck ---------- */
+.filter-panel .panel-title { justify-content: flex-start; }
+.tick.violet { background: var(--trace); }
+.filter-panel .panel-title { color: var(--trace); }
+.btn.tiny { padding: 3px 10px; font-size: 10px; margin-left: auto; }
+.btn.tiny:hover { border-color: var(--danger); color: var(--danger); }
+.filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px 28px; }
+.filter label { display: block; font-size: 12px; font-weight: 300; color: var(--bone-dim); margin-bottom: 8px; letter-spacing: .04em; }
+.filter { position: relative; }
+.filter.touched label { color: #e54ba0; }
+.filter.touched label::after { content: ' · custom'; color: var(--trace); }
+.filter input[type=range] {
+  width: calc(100% - 96px); accent-color: var(--gold); vertical-align: middle;
+}
+.filter.touched input[type=range] { accent-color: #e54ba0; }
+.filter input[type=number] {
+  width: 84px; margin-left: 10px;
+  background: var(--ink); color: var(--gold-hot);
+  border: 1px solid var(--seam); border-radius: 3px;
+  font-family: var(--mono); font-weight: 600; font-size: 13px;
+  padding: 6px 8px; outline: none;
+}
+.filter input[type=number]:focus { border-color: var(--trace); }
+
+/* ---------- surprise sweep = racing red ---------- */
+#btn-sweep { border-color: rgba(255,0,34,.45); color: var(--bone); }
+#btn-sweep:hover {
+  border-color: var(--danger); color: #fff;
+  background: linear-gradient(180deg, rgba(255,0,34,.18), rgba(255,0,34,.06));
+  box-shadow: 0 4px 18px rgba(255,0,34,.25);
+}
+
+/* ---------- scan picker tabs (violet) ---------- */
+.scan-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.scan-tab {
+  font-family: var(--mono); font-size: 11px; font-weight: 300;
+  background: transparent; color: var(--bone-dim);
+  border: 1px solid var(--seam); border-radius: 20px;
+  padding: 6px 14px; cursor: pointer; transition: all .2s;
+}
+.scan-tab:hover { border-color: var(--trace); color: var(--bone); }
+.scan-tab.active { border-color: var(--trace); color: #ff9ed4; background: rgba(185,19,114,.12); }
+
+/* ---------- alternating vein accents ---------- */
+.vein.accent-violet::before { background: linear-gradient(90deg, transparent, var(--trace), transparent); }
+.vein.accent-violet .vein-grade b { color: #ff9ed4; }
+.hit .nums small { color: #e54ba0; }

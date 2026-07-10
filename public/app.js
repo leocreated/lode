@@ -1,10 +1,17 @@
-// LODE front-of-house.
+// LODE front-of-house: 4 pages, filter deck, hash router.
 const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
 const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : String(n);
 
+const FILTER_DEFAULTS = {
+  minSubs: 0, maxSubs: 20000, minViews: 20000, minRatio: 5,
+  maxChannelAgeDays: 400, windowDays: 90, minDurationSec: 180,
+};
+
 let state = { digs: [], claims: [], assays: [] };
 let seeds = [];
+let currentDigIndex = 0;
 
 async function api(path, opts) {
   const res = await fetch(path, opts ? { headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined } : undefined);
@@ -12,17 +19,65 @@ async function api(path, opts) {
   return res.json();
 }
 
+/* ---------- router ---------- */
+const PAGES = ['scan', 'niches', 'watchlist', 'reports'];
+function route() {
+  const page = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'scan';
+  for (const p of PAGES) $('#page-' + p).hidden = p !== page;
+  $$('#nav a').forEach(a => a.classList.toggle('active', a.dataset.page === page));
+  document.body.dataset.page = page;
+  const target = $('#page-' + page);
+  gsap.fromTo(target, { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: .45, ease: 'power3.out' });
+}
+addEventListener('hashchange', route);
+
+/* ---------- filters ---------- */
+function initFilters() {
+  const saved = JSON.parse(localStorage.getItem('lodeFilters') || '{}');
+  for (const f of $$('.filter')) {
+    const key = f.dataset.key;
+    const range = f.querySelector('input[type=range]');
+    const num = f.querySelector('input[type=number]');
+    range.min = f.dataset.min; range.max = f.dataset.max; range.step = f.dataset.step;
+    const val = saved[key] ?? FILTER_DEFAULTS[key];
+    range.value = val; num.value = val;
+    const sync = (v, fromRange) => {
+      const n = Math.max(0, Number(v) || 0);
+      if (fromRange) num.value = n; else range.value = Math.min(Math.max(n, +range.min), +range.max);
+      const all = collectFilters();
+      localStorage.setItem('lodeFilters', JSON.stringify(all));
+      f.classList.toggle('touched', n !== FILTER_DEFAULTS[key]);
+    };
+    range.addEventListener('input', () => sync(range.value, true));
+    num.addEventListener('input', () => sync(num.value, false));
+    f.classList.toggle('touched', val !== FILTER_DEFAULTS[key]);
+  }
+}
+function collectFilters() {
+  const out = {};
+  for (const f of $$('.filter')) out[f.dataset.key] = Number(f.querySelector('input[type=number]').value) || 0;
+  return out;
+}
+$('#btn-reset-filters').onclick = () => {
+  localStorage.removeItem('lodeFilters');
+  for (const f of $$('.filter')) {
+    const v = FILTER_DEFAULTS[f.dataset.key];
+    f.querySelector('input[type=range]').value = v;
+    f.querySelector('input[type=number]').value = v;
+    f.classList.remove('touched');
+  }
+};
+
 /* ---------- boot ---------- */
 async function boot() {
+  initFilters();
+  route();
   state = await api('/api/state');
   renderAll();
   gsap.from('.masthead', { y: -24, opacity: 0, duration: .9, ease: 'power3.out' });
-  gsap.from('main > section', { y: 30, opacity: 0, duration: .8, stagger: .12, ease: 'power3.out', delay: .2 });
 }
 
-function renderAll() {
-  renderLedger(); renderVeins(); renderClaims(); renderAssays();
-}
+function renderAll() { renderLedger(); renderVeins(); renderClaims(); renderAssays(); }
 
 function renderLedger() {
   $('#stat-digs').textContent = state.digs.length;
@@ -48,7 +103,7 @@ function renderChips() {
   });
 }
 
-/* ---------- dig ---------- */
+/* ---------- scan ---------- */
 $('#btn-seeded').onclick = () => dig('seeded');
 $('#btn-sweep').onclick = () => dig('sweep');
 
@@ -60,12 +115,14 @@ async function dig(mode) {
   }
   setDigging(true);
   try {
-    const { jobId } = await api('/api/dig', { method: 'POST', body: { mode, seeds, luckFilter: $('#luck').checked } });
+    const { jobId } = await api('/api/dig', { method: 'POST', body: { mode, seeds, luckFilter: $('#luck').checked, filters: collectFilters() } });
     const result = await poll(jobId, p => {
       if (p.progress) $('#progress-text').textContent = `${p.progress.step} — ${p.progress.done}/${p.progress.total}`;
     });
     state.digs.unshift(result);
+    currentDigIndex = 0;
     renderAll();
+    location.hash = '#niches';
     gsap.from('.vein', { y: 24, opacity: 0, duration: .6, stagger: .07, ease: 'power3.out' });
   } catch (e) {
     $('#progress-text').textContent = '⚠ ' + e.message;
@@ -91,19 +148,28 @@ async function poll(jobId, onTick) {
   }
 }
 
-/* ---------- veins ---------- */
+/* ---------- niches ---------- */
 function renderVeins() {
-  const dig = state.digs[0];
+  const picker = $('#scan-picker'); picker.innerHTML = '';
+  state.digs.slice(0, 8).forEach((d, i) => {
+    const label = (d.mode === 'seeded' ? (d.seeds || []).slice(0, 2).join(', ') || 'topic scan' : 'sweep') +
+      ' · ' + new Date(d.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const b = el('button', 'scan-tab' + (i === currentDigIndex ? ' active' : ''), label);
+    b.onclick = () => { currentDigIndex = i; renderVeins(); };
+    picker.appendChild(b);
+  });
+
+  const dig = state.digs[currentDigIndex];
   const wrap = $('#veins'); wrap.innerHTML = '';
   $('#veins-empty').style.display = dig ? 'none' : '';
   $('#dig-meta').textContent = dig
-    ? `${dig.mode === 'seeded' ? 'topic scan' : 'surprise sweep'} · ${new Date(dig.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} · ${dig.unitsSpent} quota units${dig.luckFilter ? ' · luck filter on' : ' · one-hit wonders shown'}`
+    ? `${dig.unitsSpent} quota units${dig.luckFilter ? ' · luck filter on' : ' · one-hit wonders shown'}`
     : '';
   if (!dig) return;
 
-  for (const vein of dig.veins) {
+  dig.veins.forEach((vein, idx) => {
     const late = vein.census && vein.census.crowding > .4 && vein.census.newcomerMedianViewsPerVideo < 5000;
-    const card = el('div', 'vein' + (late ? ' late' : ''));
+    const card = el('div', 'vein accent-' + (idx % 2 ? 'violet' : 'teal') + (late ? ' late' : ''));
     card.appendChild(el('div', 'vein-top', `
       <div class="vein-name">${vein.query}</div>
       <div class="vein-grade"><b>${vein.error ? '—' : fmt(vein.grade)}</b><span>GRADE</span></div>`));
@@ -115,7 +181,7 @@ function renderVeins() {
         ${vein.census.channelsSeen} channels surveyed · ${vein.census.newcomers90d} newcomers in 90d ·
         newcomer median ${fmt(vein.census.newcomerMedianViewsPerVideo)} views/video
         ${late ? '<span class="warn"> · CROWDED, LATE</span>' : ''}
-        ${vein.singleHitCount ? `<br>${vein.singleHitCount} single-hit wonder${vein.singleHitCount > 1 ? 's' : ''} hidden by luck filter` : ''}`));
+        ${vein.singleHitCount ? `<br>${vein.singleHitCount} one-hit wonder${vein.singleHitCount > 1 ? 's' : ''} hidden by luck filter` : ''}`));
 
       for (const h of vein.hits.slice(0, 5)) {
         const staked = state.claims.some(c => c.videoId === h.videoId);
@@ -131,7 +197,7 @@ function renderVeins() {
         row.appendChild(stake);
         card.appendChild(row);
       }
-      if (!vein.hits.length) card.appendChild(el('div', 'census', 'Nothing beat the filters here.'));
+      if (!vein.hits.length) card.appendChild(el('div', 'census', 'Nothing beat the filters here. Loosen them on the Scan page.'));
 
       const actions = el('div', 'vein-actions');
       const assayBtn = el('button', 'btn small gold', '🔎 Deep dive');
@@ -140,10 +206,10 @@ function renderVeins() {
       card.appendChild(actions);
     }
     wrap.appendChild(card);
-  }
+  });
 }
 
-/* ---------- assay ---------- */
+/* ---------- deep dive ---------- */
 async function runAssayUI(vein, btn) {
   btn.disabled = true;
   const original = btn.textContent;
@@ -193,7 +259,7 @@ function openReport(assay) {
 $('#modal-close').onclick = () => { $('#modal').hidden = true; };
 $('#modal').addEventListener('click', e => { if (e.target === $('#modal')) $('#modal').hidden = true; });
 
-/* ---------- claims ---------- */
+/* ---------- watchlist ---------- */
 $('#btn-refresh').onclick = async e => {
   e.target.disabled = true; e.target.textContent = 'Refreshing…';
   try {
@@ -233,7 +299,7 @@ function renderClaims() {
 function drawSpark(canvas, snaps) {
   const ctx = canvas.getContext('2d');
   const pts = snaps.map(s => s.views);
-  if (pts.length < 2) { ctx.fillStyle = '#a89a7e'; ctx.font = '11px Oskari G2'; ctx.fillText('first check logged', 6, 40); return; }
+  if (pts.length < 2) { ctx.fillStyle = '#7e97a8'; ctx.font = '11px Oskari G2'; ctx.fillText('first check logged', 6, 40); return; }
   const min = Math.min(...pts), max = Math.max(...pts), span = Math.max(1, max - min);
   const W = canvas.width, H = canvas.height, pad = 8;
   ctx.strokeStyle = '#b91372'; ctx.lineWidth = 2; ctx.beginPath();
