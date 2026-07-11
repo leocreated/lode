@@ -221,11 +221,17 @@ async function poll(jobId, onTick) {
 /* ---------- niches ---------- */
 function renderVeins() {
   const picker = $('#scan-picker'); picker.innerHTML = '';
-  state.digs.slice(0, 8).forEach((d, i) => {
+  let lastDay = null;
+  state.digs.slice(0, 30).forEach((d, i) => {
+    const day = new Date(d.at).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    if (day !== lastDay) {
+      picker.appendChild(el('div', 'scan-day', day));
+      lastDay = day;
+    }
     const best = (d.veins || []).find(v => v.nicheName);
     const label = `Scan ${state.digs.length - i}` +
       (best ? ` · ${best.nicheName}` : d.mode === 'sweep' ? ' · sweep' : '') +
-      ' · ' + new Date(d.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      ' · ' + new Date(d.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     const b = el('button', 'scan-tab' + (i === currentDigIndex ? ' active' : ''), label);
     b.onclick = () => { currentDigIndex = i; nicheFilter = null; renderVeins(); };
     picker.appendChild(b);
@@ -281,8 +287,7 @@ function renderVeins() {
       </a>
       <a class="hit-title" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">${h.title}</a>
       <div class="hit-meta"><b>${h.ratio}×</b> · ${fmt(h.views)} views · ${ago(h.publishedAt)}</div>
-      <div class="hit-meta dim">${h.channelTitle} · ${fmt(h.subs)} subs · channel ${h.channelAgeDays}d old · ${h.repeatOverperformers}× repeat</div>
-      <span class="niche-tag accent-${vi % 2 ? 'violet' : 'teal'}">${v.nicheName || v.query}</span>`;
+      <div class="hit-meta dim">${h.channelTitle} · ${fmt(h.subs)} subs · channel ${h.channelAgeDays}d old · ${h.repeatOverperformers}× repeat</div>`;
     const stake = el('button', 'stake' + (staked ? ' staked' : ''), staked ? '★ watching' : '☆ watch');
     stake.onclick = async () => {
       await api('/api/claim', { method: 'POST', body: { hit: h, query: v.query } });
