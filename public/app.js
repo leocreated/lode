@@ -251,10 +251,11 @@ function renderVeins() {
     const niches = [...nichesMap.values()].sort((x, y) => (y.grade || 0) - (x.grade || 0));
 
     const chips = el('div', 'niche-strip');
-    niches.forEach((vein, idx) => {
+    const dead = niches.filter(v => !v.hits?.length);
+    niches.filter(v => v.hits?.length).forEach((vein, idx) => {
       const late = vein.census && vein.census.crowding > .4 && vein.census.newcomerMedianViewsPerVideo < 5000;
-      const has = vein.hits?.length;
-      const chipEl = el('div', 'niche-chip accent-' + (idx % 2 ? 'violet' : 'teal') + (has ? '' : ' dead') + (late ? ' late' : ''));
+      const has = true;
+      const chipEl = el('div', 'niche-chip accent-' + (idx % 2 ? 'violet' : 'teal') + (late ? ' late' : ''));
       chipEl.title = (vein.nicheDesc || '') + (vein.relaxed ? ' (auto-widened search)' : '');
       chipEl.innerHTML = `<span class="np-name">${vein.nicheName || vein.query}</span>
         <span class="np-grade">${has ? fmt(vein.grade) : vein.error ? 'err' : '0'}</span>
@@ -271,6 +272,8 @@ function renderVeins() {
       chips.appendChild(chipEl);
     });
     section.appendChild(chips);
+    if (dead.length) section.appendChild(el('div', 'dead-line',
+      'searched with no results: ' + dead.map(v => v.query).join(', ')));
 
     const seen = new Set();
     const cards = niches

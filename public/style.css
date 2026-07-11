@@ -584,3 +584,5 @@ main { max-width: 1720px; margin: 0 auto; padding: 32px 40px 120px; display: gri
   color: var(--gold-hot); background: rgba(65,234,212,.1);
   padding: 2px 7px; border-radius: 9px;
 }
+
+.dead-line { font-size: 13px; font-weight: 300; color: #4a6478; letter-spacing: .03em; margin-top: -6px; }
