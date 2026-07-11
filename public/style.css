@@ -494,6 +494,7 @@ main { max-width: 1720px; margin: 0 auto; padding: 32px 40px 120px; display: gri
   color: var(--gold-hot); background: rgba(65,234,212,.1); border: 1px solid rgba(65,234,212,.35);
 }
 .niche-tag.accent-violet { color: #ff9ed4; background: rgba(185,19,114,.12); border-color: rgba(185,19,114,.45); }
+.vcard .hit-meta.dim { padding-right: 52px; }
 .vcard .stake { align-self: flex-start; background: none; border: none; padding: 0; font-size: 15px; font-weight: 300; color: var(--bone-dim); cursor: pointer; }
 .vcard .stake:hover { color: var(--gold-hot); }
 .vcard .stake.staked { color: #e54ba0; }
@@ -570,3 +571,16 @@ main { max-width: 1720px; margin: 0 auto; padding: 32px 40px 120px; display: gri
 .collection-head h3 { font-size: 26px; font-weight: 700; }
 .collection-head h3::after { content: '.'; color: #ff9ed4; }
 .col-count { font-size: 14px; font-weight: 300; color: var(--bone-dim); }
+
+.day-list { display: grid; gap: 48px; }
+.day-section { display: grid; gap: 20px; }
+.day-head {
+  font-size: 24px; font-weight: 700; color: var(--bone);
+  border-bottom: 1px solid var(--seam); padding-bottom: 10px;
+}
+.day-head .day-meta { font-size: 13px; font-weight: 300; color: var(--bone-dim); margin-left: 14px; }
+.np-relaxed {
+  font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--gold-hot); background: rgba(65,234,212,.1);
+  padding: 2px 7px; border-radius: 9px;
+}

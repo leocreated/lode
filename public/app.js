@@ -220,76 +220,85 @@ async function poll(jobId, onTick) {
 
 /* ---------- niches ---------- */
 function renderVeins() {
-  const picker = $('#scan-picker'); picker.innerHTML = '';
-  let lastDay = null;
-  state.digs.slice(0, 30).forEach((d, i) => {
-    const day = new Date(d.at).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-    if (day !== lastDay) {
-      picker.appendChild(el('div', 'scan-day', day));
-      lastDay = day;
-    }
-    const best = (d.veins || []).find(v => v.nicheName);
-    const label = `Scan ${state.digs.length - i}` +
-      (best ? ` · ${best.nicheName}` : d.mode === 'sweep' ? ' · sweep' : '') +
-      ' · ' + new Date(d.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    const b = el('button', 'scan-tab' + (i === currentDigIndex ? ' active' : ''), label);
-    b.onclick = () => { currentDigIndex = i; nicheFilter = null; renderVeins(); };
-    picker.appendChild(b);
-  });
-
-  const dig = state.digs[currentDigIndex];
   const wrap = $('#veins'); wrap.innerHTML = '';
-  const strip = $('#niche-strip'); strip.innerHTML = '';
-  $('#veins-empty').style.display = dig ? 'none' : '';
-  $('#dig-meta').textContent = dig
-    ? `${dig.config ? summarizeFilters(dig.config) + ' · ' : ''}${dig.unitsSpent} quota units${dig.luckFilter ? ' · luck filter on' : ' · one-hit wonders shown'}`
-    : '';
-  if (!dig) return;
+  $('#scan-picker').innerHTML = '';
+  $('#niche-strip').innerHTML = '';
+  $('#veins-empty').style.display = state.digs.length ? 'none' : '';
+  $('#dig-meta').textContent = '';
+  if (!state.digs.length) return;
 
-  // niche chips: slim summary row; deep dives live in each card's ... menu too
-  const veinsWithHits = dig.veins.filter(v => v.hits?.length);
-  dig.veins.forEach((vein, idx) => {
-    const late = vein.census && vein.census.crowding > .4 && vein.census.newcomerMedianViewsPerVideo < 5000;
-    const has = vein.hits?.length;
-    const chipEl = el('div', 'niche-chip accent-' + (idx % 2 ? 'violet' : 'teal') + (has ? '' : ' dead') + (late ? ' late' : ''));
-    chipEl.title = vein.nicheDesc || '';
-    chipEl.innerHTML = `<span class="np-name">${vein.nicheName || vein.query}</span>
-      <span class="np-grade">${has ? fmt(vein.grade) : vein.error ? 'err' : '0'}</span>
-      ${late ? '<span class="np-warn">late</span>' : ''}`;
-    if (has) {
-      const dd = el('button', 'chip-btn', '🔎');
-      dd.title = 'Deep dive this niche';
-      dd.onclick = e => { e.stopPropagation(); runAssayUI(vein, dd); };
-      chipEl.appendChild(dd);
-      chipEl.onclick = () => { nicheFilter = nicheFilter === vein.query ? null : vein.query; renderVeins(); };
-      if (nicheFilter === vein.query) chipEl.classList.add('active');
-    }
-    strip.appendChild(chipEl);
-  });
-
-  // flat video grid: every hit is its own card, niche tagged on it
-  const cards = veinsWithHits
-    .flatMap((v, vi) => v.hits.map(h => ({ h, v, vi })))
-    .filter(x => !nicheFilter || x.v.query === nicheFilter)
-    .sort((a, b) => b.h.ratio * Math.log10(Math.max(10, b.h.views)) - a.h.ratio * Math.log10(Math.max(10, a.h.views)));
-
-  for (const { h, v, vi } of cards) {
-    const staked = state.claims.some(c => c.videoId === h.videoId);
-    const card = el('div', 'vcard');
-    card.innerHTML = `
-      <a class="thumb" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">
-        ${h.thumbnail ? `<img src="${h.thumbnail}" alt="" loading="lazy">` : '<div class="thumb-blank"></div>'}
-        <span class="ratio-badge">${h.ratio}×</span>
-        ${staked ? '<span class="watch-flag">★</span>' : ''}
-      </a>
-      <a class="hit-title" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">${h.title}</a>
-      <div class="hit-meta"><b>${h.ratio}×</b> · ${fmt(h.views)} views · ${ago(h.publishedAt)}</div>
-      <div class="hit-meta dim">${h.channelTitle} · ${fmt(h.subs)} subs · channel ${h.channelAgeDays}d old · ${h.repeatOverperformers}× repeat</div>`;
-    card.appendChild(moreMenu(h, v, staked));
-    wrap.appendChild(card);
+  // group all scans by the DAY they ran; each day = one merged view
+  const days = [];
+  for (const d of state.digs) {
+    const day = new Date(d.at).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+    let g = days.find(x => x.day === day);
+    if (!g) { g = { day, digs: [] }; days.push(g); }
+    g.digs.push(d);
   }
-  if (!cards.length && veinsWithHits.length === 0)
-    wrap.appendChild(el('div', 'empty', 'Nothing beat the filters in this scan. Loosen them on the Scan page.'));
+
+  for (const g of days) {
+    const section = el('div', 'day-section');
+    const units = g.digs.reduce((s, d) => s + (d.unitsSpent || 0), 0);
+    section.appendChild(el('div', 'day-head', `${g.day} <span class="day-meta">${g.digs.length} scan${g.digs.length > 1 ? 's' : ''} · ${units} quota units</span>`));
+
+    // merge every scan's niches for the day; dedupe niches by label, videos by id
+    const nichesMap = new Map();
+    for (const d of g.digs) for (const vein of d.veins) {
+      const key = (vein.nicheName || vein.query).toLowerCase();
+      const cur = nichesMap.get(key);
+      if (!cur || (vein.grade || 0) > (cur.grade || 0)) nichesMap.set(key, vein);
+    }
+    const niches = [...nichesMap.values()].sort((x, y) => (y.grade || 0) - (x.grade || 0));
+
+    const chips = el('div', 'niche-strip');
+    niches.forEach((vein, idx) => {
+      const late = vein.census && vein.census.crowding > .4 && vein.census.newcomerMedianViewsPerVideo < 5000;
+      const has = vein.hits?.length;
+      const chipEl = el('div', 'niche-chip accent-' + (idx % 2 ? 'violet' : 'teal') + (has ? '' : ' dead') + (late ? ' late' : ''));
+      chipEl.title = (vein.nicheDesc || '') + (vein.relaxed ? ' (auto-widened search)' : '');
+      chipEl.innerHTML = `<span class="np-name">${vein.nicheName || vein.query}</span>
+        <span class="np-grade">${has ? fmt(vein.grade) : vein.error ? 'err' : '0'}</span>
+        ${vein.relaxed ? '<span class="np-relaxed">widened</span>' : ''}
+        ${late ? '<span class="np-warn">late</span>' : ''}`;
+      if (has) {
+        const dd = el('button', 'chip-btn', '🔎');
+        dd.title = 'Deep dive this niche';
+        dd.onclick = e => { e.stopPropagation(); runAssayUI(vein, dd); };
+        chipEl.appendChild(dd);
+        chipEl.onclick = () => { nicheFilter = nicheFilter === vein.query ? null : vein.query; renderVeins(); };
+        if (nicheFilter === vein.query) chipEl.classList.add('active');
+      }
+      chips.appendChild(chipEl);
+    });
+    section.appendChild(chips);
+
+    const seen = new Set();
+    const cards = niches
+      .flatMap((v, vi) => (v.hits || []).map(h => ({ h, v, vi })))
+      .filter(x => !seen.has(x.h.videoId) && seen.add(x.h.videoId))
+      .filter(x => !nicheFilter || x.v.query === nicheFilter)
+      .sort((a, b) => b.h.ratio * Math.log10(Math.max(10, b.h.views)) - a.h.ratio * Math.log10(Math.max(10, a.h.views)));
+
+    const grid = el('div', 'veins');
+    for (const { h, v } of cards) {
+      const staked = state.claims.some(c => c.videoId === h.videoId);
+      const card = el('div', 'vcard');
+      card.innerHTML = `
+        <a class="thumb" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">
+          ${h.thumbnail ? `<img src="${h.thumbnail}" alt="" loading="lazy">` : '<div class="thumb-blank"></div>'}
+          <span class="ratio-badge">${h.ratio}×</span>
+          ${staked ? '<span class="watch-flag">★</span>' : ''}
+        </a>
+        <a class="hit-title" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">${h.title}</a>
+        <div class="hit-meta"><b>${h.ratio}×</b> · ${fmt(h.views)} views · ${ago(h.publishedAt)}</div>
+        <div class="hit-meta dim" title="Breakouts = videos on this channel with at least 3x more views than subscribers. More than one means a repeatable format, not one lucky video.">${h.channelTitle} · ${fmt(h.subs)} subs · channel ${h.channelAgeDays}d old · ${h.repeatOverperformers} breakout${h.repeatOverperformers === 1 ? '' : 's'}</div>`;
+      card.appendChild(moreMenu(h, v, staked));
+      grid.appendChild(card);
+    }
+    if (!cards.length) grid.appendChild(el('div', 'empty', 'Nothing qualified, even after auto-widening the search.'));
+    section.appendChild(grid);
+    wrap.appendChild(section);
+  }
 }
 
 /* ---------- deep dive ---------- */
