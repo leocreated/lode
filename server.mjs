@@ -29,6 +29,7 @@ app.get('/api/state', (req, res) => {
     digs: load('digs', []).slice(0, 25),
     claims: load('claims', []),
     assays: load('assays', []).slice(0, 50),
+    collections: load('collections', []),
     territories: SWEEP_TERRITORIES,
   });
 });
@@ -106,6 +107,20 @@ app.post('/api/claims/refresh', async (req, res) => {
     save('claims', claims);
     res.json({ claims, refreshed: claims.length });
   } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+});
+
+// Collections: named folders of videos
+app.post('/api/collections', (req, res) => {
+  const { action, name, videoId, hit, query } = req.body || {};
+  let cols = load('collections', []);
+  const col = cols.find(c => c.name === name);
+  if (action === 'create' && name && !col) cols.push({ name, videos: [] });
+  else if (action === 'delete' && col) cols = cols.filter(c => c !== col);
+  else if (action === 'add' && col && hit?.videoId) {
+    if (!col.videos.some(v => v.videoId === hit.videoId)) col.videos.push({ ...hit, query, addedAt: new Date().toISOString() });
+  } else if (action === 'remove' && col) col.videos = col.videos.filter(v => v.videoId !== videoId);
+  save('collections', cols);
+  res.json({ collections: cols });
 });
 
 // Assay: deep dive one vein via local Claude Code

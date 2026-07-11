@@ -56,7 +56,7 @@ async function api(path, opts) {
 }
 
 /* ---------- router ---------- */
-const PAGES = ['scan', 'niches', 'watchlist', 'reports'];
+const PAGES = ['scan', 'niches', 'watchlist', 'reports', 'collections'];
 function route() {
   const page = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'scan';
   for (const p of PAGES) $('#page-' + p).hidden = p !== page;
@@ -135,7 +135,7 @@ async function boot() {
   gsap.from('.masthead', { y: -24, opacity: 0, duration: .9, ease: 'power3.out' });
 }
 
-function renderAll() { renderLedger(); renderVeins(); renderClaims(); renderAssays(); }
+function renderAll() { renderLedger(); renderVeins(); renderClaims(); renderAssays(); renderCollections(); }
 
 function renderLedger() {
   $('#stat-digs').textContent = state.digs.length;
@@ -246,29 +246,25 @@ function renderVeins() {
     : '';
   if (!dig) return;
 
-  // niche strip: one pill per niche found, with grade + deep dive
+  // niche chips: slim summary row; deep dives live in each card's ... menu too
   const veinsWithHits = dig.veins.filter(v => v.hits?.length);
   dig.veins.forEach((vein, idx) => {
     const late = vein.census && vein.census.crowding > .4 && vein.census.newcomerMedianViewsPerVideo < 5000;
     const has = vein.hits?.length;
-    const pill = el('div', 'niche-pill accent-' + (idx % 2 ? 'violet' : 'teal') + (has ? '' : ' dead') + (late ? ' late' : ''));
-    pill.innerHTML = `
-      <div class="np-main">
-        <span class="np-name">${vein.nicheName || vein.query}</span>
-        <span class="np-grade">${has ? fmt(vein.grade) + ' grade' : vein.error ? 'error' : '0 hits'}</span>
-        ${late ? '<span class="np-warn">crowded · late</span>' : ''}
-      </div>
-      ${vein.nicheDesc ? `<div class="np-desc">${vein.nicheDesc}</div>` : ''}`;
+    const chipEl = el('div', 'niche-chip accent-' + (idx % 2 ? 'violet' : 'teal') + (has ? '' : ' dead') + (late ? ' late' : ''));
+    chipEl.title = vein.nicheDesc || '';
+    chipEl.innerHTML = `<span class="np-name">${vein.nicheName || vein.query}</span>
+      <span class="np-grade">${has ? fmt(vein.grade) : vein.error ? 'err' : '0'}</span>
+      ${late ? '<span class="np-warn">late</span>' : ''}`;
     if (has) {
-      const row = el('div', 'np-actions');
-      const dd = el('button', 'btn tiny gold', '🔎 Deep dive');
+      const dd = el('button', 'chip-btn', '🔎');
+      dd.title = 'Deep dive this niche';
       dd.onclick = e => { e.stopPropagation(); runAssayUI(vein, dd); };
-      const flt = el('button', 'btn tiny', nicheFilter === vein.query ? 'show all' : 'only this');
-      flt.onclick = e => { e.stopPropagation(); nicheFilter = nicheFilter === vein.query ? null : vein.query; renderVeins(); };
-      row.appendChild(dd); row.appendChild(flt);
-      pill.appendChild(row);
+      chipEl.appendChild(dd);
+      chipEl.onclick = () => { nicheFilter = nicheFilter === vein.query ? null : vein.query; renderVeins(); };
+      if (nicheFilter === vein.query) chipEl.classList.add('active');
     }
-    strip.appendChild(pill);
+    strip.appendChild(chipEl);
   });
 
   // flat video grid: every hit is its own card, niche tagged on it
@@ -284,16 +280,12 @@ function renderVeins() {
       <a class="thumb" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">
         ${h.thumbnail ? `<img src="${h.thumbnail}" alt="" loading="lazy">` : '<div class="thumb-blank"></div>'}
         <span class="ratio-badge">${h.ratio}×</span>
+        ${staked ? '<span class="watch-flag">★</span>' : ''}
       </a>
       <a class="hit-title" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">${h.title}</a>
       <div class="hit-meta"><b>${h.ratio}×</b> · ${fmt(h.views)} views · ${ago(h.publishedAt)}</div>
       <div class="hit-meta dim">${h.channelTitle} · ${fmt(h.subs)} subs · channel ${h.channelAgeDays}d old · ${h.repeatOverperformers}× repeat</div>`;
-    const stake = el('button', 'stake' + (staked ? ' staked' : ''), staked ? '★ watching' : '☆ watch');
-    stake.onclick = async () => {
-      await api('/api/claim', { method: 'POST', body: { hit: h, query: v.query } });
-      state = await api('/api/state'); renderAll();
-    };
-    card.appendChild(stake);
+    card.appendChild(moreMenu(h, v, staked));
     wrap.appendChild(card);
   }
   if (!cards.length && veinsWithHits.length === 0)
@@ -402,6 +394,101 @@ function drawSpark(canvas, snaps) {
   ctx.stroke();
   const lastX = W - pad, lastY = H - pad - (H - 2 * pad) * (pts.at(-1) - min) / span;
   ctx.fillStyle = '#41ead4'; ctx.beginPath(); ctx.arc(lastX, lastY, 3, 0, 7); ctx.fill();
+}
+
+/* ---------- card menu + collections ---------- */
+function closeMenus() { $$('.menu-pop').forEach(m => m.remove()); }
+document.addEventListener('click', closeMenus);
+
+function moreMenu(h, v, staked) {
+  const btn = el('button', 'more-btn', '⋯');
+  btn.onclick = e => {
+    e.stopPropagation();
+    const existing = btn.parentElement.querySelector('.menu-pop');
+    closeMenus();
+    if (existing) return;
+    const menu = el('div', 'menu-pop');
+    const watch = el('button', 'menu-item', staked ? '★ Stop watching' : '☆ Watch');
+    watch.onclick = async () => {
+      await api('/api/claim', { method: 'POST', body: { hit: h, query: v.query } });
+      state = await api('/api/state'); renderAll();
+    };
+    const dive = el('button', 'menu-item', '🔎 Deep dive this niche');
+    dive.onclick = () => { closeMenus(); runAssayUI(v, dive); };
+    menu.appendChild(watch); menu.appendChild(dive);
+    menu.appendChild(el('div', 'menu-sep', 'add to collection'));
+    for (const c of state.collections || []) {
+      const inCol = c.videos.some(x => x.videoId === h.videoId);
+      const item = el('button', 'menu-item', (inCol ? '✓ ' : '▸ ') + c.name);
+      item.onclick = async () => {
+        await api('/api/collections', { method: 'POST', body: inCol
+          ? { action: 'remove', name: c.name, videoId: h.videoId }
+          : { action: 'add', name: c.name, hit: h, query: v.query } });
+        state = await api('/api/state'); renderAll();
+      };
+      menu.appendChild(item);
+    }
+    const newCol = el('button', 'menu-item new', '+ New collection…');
+    newCol.onclick = async () => {
+      const name = prompt('Collection name:');
+      if (!name?.trim()) return;
+      await api('/api/collections', { method: 'POST', body: { action: 'create', name: name.trim() } });
+      await api('/api/collections', { method: 'POST', body: { action: 'add', name: name.trim(), hit: h, query: v.query } });
+      state = await api('/api/state'); renderAll();
+    };
+    menu.appendChild(newCol);
+    menu.onclick = e => e.stopPropagation();
+    btn.parentElement.appendChild(menu);
+  };
+  return btn;
+}
+
+$('#btn-new-collection').onclick = async () => {
+  const name = prompt('Collection name:');
+  if (!name?.trim()) return;
+  await api('/api/collections', { method: 'POST', body: { action: 'create', name: name.trim() } });
+  state = await api('/api/state'); renderAll();
+};
+
+function renderCollections() {
+  const wrap = $('#collections'); if (!wrap) return;
+  wrap.innerHTML = '';
+  const cols = state.collections || [];
+  $('#collections-empty').style.display = cols.length ? 'none' : '';
+  for (const c of cols) {
+    const sec = el('div', 'collection');
+    const head = el('div', 'collection-head', `<h3>${c.name}</h3><span class="col-count">${c.videos.length} video${c.videos.length === 1 ? '' : 's'}</span>`);
+    const del = el('button', 'btn tiny', 'delete');
+    del.onclick = async () => {
+      if (!confirm(`Delete collection "${c.name}"?`)) return;
+      await api('/api/collections', { method: 'POST', body: { action: 'delete', name: c.name } });
+      state = await api('/api/state'); renderAll();
+    };
+    head.appendChild(del);
+    sec.appendChild(head);
+    const grid = el('div', 'veins');
+    for (const h of c.videos) {
+      const card = el('div', 'vcard');
+      card.innerHTML = `
+        <a class="thumb" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">
+          ${h.thumbnail ? `<img src="${h.thumbnail}" alt="" loading="lazy">` : '<div class="thumb-blank"></div>'}
+          <span class="ratio-badge">${h.ratio}×</span>
+        </a>
+        <a class="hit-title" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">${h.title}</a>
+        <div class="hit-meta"><b>${h.ratio}×</b> · ${fmt(h.views)} views · ${ago(h.publishedAt)}</div>
+        <div class="hit-meta dim">${h.channelTitle} · ${fmt(h.subs)} subs</div>`;
+      const rm = el('button', 'stake', 'remove');
+      rm.onclick = async () => {
+        await api('/api/collections', { method: 'POST', body: { action: 'remove', name: c.name, videoId: h.videoId } });
+        state = await api('/api/state'); renderAll();
+      };
+      card.appendChild(rm);
+      grid.appendChild(card);
+    }
+    if (!c.videos.length) grid.appendChild(el('div', 'empty', 'Empty. Use the ⋯ menu on any video card to file one here.'));
+    sec.appendChild(grid);
+    wrap.appendChild(sec);
+  }
 }
 
 /* ---------- tiny markdown ---------- */
