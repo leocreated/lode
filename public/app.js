@@ -187,7 +187,7 @@ async function dig(mode) {
     renderAll();
     gsap.from('.vein', { y: 24, opacity: 0, duration: .6, stagger: .07, ease: 'power3.out' });
   } catch (e) {
-    $('#progress-text').textContent = '⚠ ' + e.message;
+    $('#progress-text').textContent = 'error: ' + e.message;
     await new Promise(r => setTimeout(r, 4500));
   }
   setDigging(false);
@@ -262,7 +262,7 @@ function renderVeins() {
         ${vein.relaxed ? '<span class="np-relaxed">widened</span>' : ''}
         ${late ? '<span class="np-warn">late</span>' : ''}`;
       if (has) {
-        const dd = el('button', 'chip-btn', '🔎');
+        const dd = el('button', 'chip-btn', 'dive');
         dd.title = 'Deep dive this niche';
         dd.onclick = e => { e.stopPropagation(); runAssayUI(vein, dd); };
         chipEl.appendChild(dd);
@@ -271,9 +271,14 @@ function renderVeins() {
       }
       chips.appendChild(chipEl);
     });
-    section.appendChild(chips);
-    if (dead.length) section.appendChild(el('div', 'dead-line',
+    const rail = el('aside', 'niche-rail');
+    rail.appendChild(el('div', 'rail-title', 'NICHES FOUND'));
+    rail.appendChild(chips);
+    if (dead.length) rail.appendChild(el('div', 'dead-line',
       'searched with no results: ' + dead.map(v => v.query).join(', ')));
+    const body = el('div', 'day-body');
+    body.appendChild(rail);
+    section.appendChild(body);
 
     const seen = new Set();
     const cards = niches
@@ -293,13 +298,13 @@ function renderVeins() {
           ${staked ? '<span class="watch-flag">★</span>' : ''}
         </a>
         <a class="hit-title" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">${h.title}</a>
-        <div class="hit-meta"><b>${h.ratio}×</b> · ${fmt(h.views)} views · ${ago(h.publishedAt)}</div>
+        <div class="hit-meta">${fmt(h.views)} views · ${ago(h.publishedAt)}</div>
         <div class="hit-meta dim" title="Breakouts = videos on this channel with at least 3x more views than subscribers. More than one means a repeatable format, not one lucky video.">${h.channelTitle} · ${fmt(h.subs)} subs · channel ${h.channelAgeDays}d old · ${h.repeatOverperformers} breakout${h.repeatOverperformers === 1 ? '' : 's'}</div>`;
       card.appendChild(moreMenu(h, v, staked));
       grid.appendChild(card);
     }
     if (!cards.length) grid.appendChild(el('div', 'empty', 'Nothing qualified, even after auto-widening the search.'));
-    section.appendChild(grid);
+    section.querySelector('.day-body').appendChild(grid);
     wrap.appendChild(section);
   }
 }
@@ -308,9 +313,9 @@ function renderVeins() {
 async function runAssayUI(vein, btn) {
   btn.disabled = true;
   const original = btn.textContent;
-  btn.textContent = '🔎 analyzing…';
+  btn.textContent = 'analyzing…';
   const tick = setInterval(() => {
-    btn.textContent = btn.textContent.endsWith('……') ? '🔎 analyzing…' : btn.textContent + '…';
+    btn.textContent = btn.textContent.endsWith('……') ? 'analyzing…' : btn.textContent + '…';
   }, 1200);
   try {
     const { jobId } = await api('/api/assay', { method: 'POST', body: { vein } });
@@ -425,7 +430,7 @@ function moreMenu(h, v, staked) {
       await api('/api/claim', { method: 'POST', body: { hit: h, query: v.query } });
       state = await api('/api/state'); renderAll();
     };
-    const dive = el('button', 'menu-item', '🔎 Deep dive this niche');
+    const dive = el('button', 'menu-item', 'Deep dive this niche');
     dive.onclick = () => { closeMenus(); runAssayUI(v, dive); };
     menu.appendChild(watch); menu.appendChild(dive);
     menu.appendChild(el('div', 'menu-sep', 'add to collection'));
@@ -487,7 +492,7 @@ function renderCollections() {
           <span class="ratio-badge">${h.ratio}×</span>
         </a>
         <a class="hit-title" href="https://youtube.com/watch?v=${h.videoId}" target="_blank">${h.title}</a>
-        <div class="hit-meta"><b>${h.ratio}×</b> · ${fmt(h.views)} views · ${ago(h.publishedAt)}</div>
+        <div class="hit-meta">${fmt(h.views)} views · ${ago(h.publishedAt)}</div>
         <div class="hit-meta dim">${h.channelTitle} · ${fmt(h.subs)} subs</div>`;
       const rm = el('button', 'stake', 'remove');
       rm.onclick = async () => {

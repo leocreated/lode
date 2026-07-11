@@ -586,3 +586,29 @@ main { max-width: 1720px; margin: 0 auto; padding: 32px 40px 120px; display: gri
 }
 
 .dead-line { font-size: 13px; font-weight: 300; color: #4a6478; letter-spacing: .03em; margin-top: -6px; }
+
+/* ---------- niche left rail on Niches page ---------- */
+.day-body { display: grid; grid-template-columns: 320px 1fr; gap: 26px; align-items: start; }
+.niche-rail {
+  position: sticky; top: 20px;
+  display: grid; gap: 12px;
+  background: linear-gradient(180deg, var(--coal-2), var(--coal));
+  border: 1px solid var(--seam); border-radius: 4px;
+  padding: 18px;
+}
+.rail-title { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .28em; color: var(--gold); }
+.niche-rail .niche-strip { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.niche-rail .niche-chip { width: 100%; justify-content: space-between; }
+.niche-rail .niche-chip .np-name { flex: 1; }
+@media (max-width: 1000px) { .day-body { grid-template-columns: 1fr; } .niche-rail { position: static; } }
+
+.niche-rail { overflow: hidden; }
+.niche-rail .niche-chip { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px 10px; }
+.niche-rail .np-name { font-size: 15px; overflow-wrap: anywhere; }
+.niche-rail .np-grade { white-space: nowrap; }
+.niche-rail .dead-line { overflow-wrap: anywhere; margin-top: 2px; }
+
+.chip-btn { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); }
+.chip-btn:hover { color: var(--gold-hot); transform: none; text-decoration: underline; }
+
+.niche-rail > *, .niche-rail .niche-strip > * { min-width: 0; max-width: 100%; }
