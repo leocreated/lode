@@ -20,6 +20,34 @@ let state = { digs: [], claims: [], assays: [] };
 let seeds = [];
 let currentDigIndex = 0;
 let nicheFilter = null;
+let tipTimer = null;
+
+const SCAN_TIPS = [
+  'Tip: the pink badge is the outlier multiple — a 50× video means 50 times more views than the channel has subscribers.',
+  'Tip: turn OFF the luck filter to see one-hit wonders — single viral videos on otherwise quiet channels.',
+  'Tip: watch a video (☆) and hit Refresh on the Watchlist tomorrow — the momentum line shows if it is still climbing.',
+  'Tip: a red CROWDED, LATE flag means newcomers are flooding in and flopping. You are late to that party.',
+  'Tip: Deep dive costs nothing — it runs on your Claude subscription and checks saturation, retention, and money angles.',
+  'Tip: tighten Max subscribers on the Scan page to find channels that are still tiny but already popping.',
+  'Tip: every video card shows ×repeat — how many times that channel overperformed. 3×+ means a format, not luck.',
+  'Tip: scans only return videos in English. Foreign-language lookalikes get vetted out automatically.',
+  'Tip: use several topics in one scan (Enter after each) — they compete, and the best niche rises to the top.',
+  'Tip: GO / WATCH / SKIP verdicts live on the Reports page, stamped on every deep dive you run.',
+];
+
+function startTips() {
+  const sub = $('#scan-tip');
+  let i = Math.floor(Math.random() * SCAN_TIPS.length);
+  const show = () => {
+    gsap.to(sub, { opacity: 0, duration: .3, onComplete: () => {
+      sub.textContent = SCAN_TIPS[i % SCAN_TIPS.length]; i++;
+      gsap.to(sub, { opacity: 1, duration: .4 });
+    }});
+  };
+  sub.textContent = SCAN_TIPS[i % SCAN_TIPS.length]; i++;
+  tipTimer = setInterval(show, 5000);
+}
+function stopTips() { clearInterval(tipTimer); tipTimer = null; }
 
 async function api(path, opts) {
   const res = await fetch(path, opts ? { headers: { 'Content-Type': 'application/json' }, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined } : undefined);
@@ -167,6 +195,7 @@ async function dig(mode) {
 
 function setDigging(on) {
   $('#scan-live').hidden = !on;
+  if (on) startTips(); else stopTips();
   $('#nav-dot').hidden = !on;
   $('#btn-seeded').disabled = on;
   $('#btn-sweep').disabled = on;
