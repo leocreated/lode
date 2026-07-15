@@ -1,11 +1,6 @@
 /* LODE — ink black, turquoise signal, racing-red warnings.
-   One typeface (Oskari G2), weight-driven hierarchy. */
+   One typeface (Helvetica), weight-driven hierarchy. */
 
-@font-face { font-family: 'Oskari G2'; src: url('fonts/OskariG2-Light.otf') format('opentype'); font-weight: 300; }
-@font-face { font-family: 'Oskari G2'; src: url('fonts/OskariG2-Book.otf') format('opentype'); font-weight: 400; }
-@font-face { font-family: 'Oskari G2'; src: url('fonts/OskariG2-SemiBold.otf') format('opentype'); font-weight: 600; }
-@font-face { font-family: 'Oskari G2'; src: url('fonts/OskariG2-Bold.otf') format('opentype'); font-weight: 700; }
-@font-face { font-family: 'Oskari G2'; src: url('fonts/OskariG2-Black.otf') format('opentype'); font-weight: 900; }
 
 :root {
   --ink: #011627;
@@ -21,8 +16,8 @@
   --trace: #b91372;
   --barren: #5c6e7a;
   --danger: #ff0022;
-  --serif: 'Oskari G2', sans-serif;
-  --mono: 'Oskari G2', sans-serif; /* uniform type; weight + spacing do the differentiation */
+  --serif: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --mono: 'Helvetica Neue', Helvetica, Arial, sans-serif; /* uniform type; weight + spacing do the differentiation */
 }
 
 * { box-sizing: border-box; margin: 0; }
