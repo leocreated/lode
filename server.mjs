@@ -16,6 +16,10 @@ for (const line of (fs.existsSync(path.join(ROOT, '.env')) ? fs.readFileSync(pat
   if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
 }
 const API_KEY = process.env.YOUTUBE_API_KEY;
+if (!API_KEY) {
+  console.error('\nNo YouTube API key found. Run ./setup.sh first (it asks for your key and saves it to .env).\n');
+  process.exit(1);
+}
 
 const app = express();
 app.use(express.json());
