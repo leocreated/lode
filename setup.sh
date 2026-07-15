@@ -21,14 +21,18 @@ else
   FAIL=1
 fi
 
-# 2. Claude Code
+# 2. An AI CLI: Claude Code or OpenAI Codex (either works)
 if command -v claude >/dev/null 2>&1; then
-  ok "Claude Code found"
+  ok "Claude Code found (LODE will use Claude)"
   note "Make sure you're logged in: run 'claude' once and sign in with your Claude subscription."
+elif command -v codex >/dev/null 2>&1; then
+  ok "OpenAI Codex found (LODE will use ChatGPT)"
+  note "Make sure you're logged in: run 'codex' once and sign in with your ChatGPT account."
 else
-  bad "Claude Code is not installed"
-  note "Install: npm install -g @anthropic-ai/claude-code   then run 'claude' and log in."
-  note "LODE uses it (on your subscription, free) to name niches and write deep-dive reports."
+  bad "No AI assistant installed. LODE needs ONE of these (runs on your existing subscription, free):"
+  note "Claude subscription?  npm install -g @anthropic-ai/claude-code   then run 'claude' and log in."
+  note "ChatGPT subscription? npm install -g @openai/codex              then run 'codex' and log in."
+  note "It names the niches, reads thumbnails to filter foreign-language bait, and writes deep-dive reports."
   FAIL=1
 fi
 
