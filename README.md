@@ -4,6 +4,14 @@ Find YouTube niches before they're crowded. LODE scans for young, small channels
 
 It runs on your machine. Your scans, watchlist, and reports stay local. The AI parts run through Claude Code on **your own Claude subscription**, so there's no API bill.
 
+## Install (one line)
+
+```
+curl -fsSL https://raw.githubusercontent.com/leocreated/lode/main/install.sh | bash
+```
+
+That downloads LODE to `~/lode` and runs setup. Run the same line again any time to update. Prefer manual? See below.
+
 ## Setup (one time, ~5 minutes)
 
 You need three things:
@@ -46,4 +54,4 @@ Open http://localhost:4780.
 
 - Everything saves to the `data/` folder. Delete it and you start fresh.
 - If the page ever looks stale after an update, hard refresh (Cmd+Shift+R).
-- Private beta. Don't share the repo or redistribute.
+- Beta. Things will change fast; rerun the install line to stay current.
